@@ -3,3 +3,8 @@ spring:
     name: unity-be
   config:
     import: optional:file:.env[.properties]
+  datasource:
+    url: ${dbUrl}
+    username: ${dbUserName}
+    password: ${dbPassWord}
+    driver-class-name: com.mysql.cj.jdbc.Driver
