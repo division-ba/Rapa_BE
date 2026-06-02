@@ -44,9 +44,6 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private int sellPrice;
 
-    //    엔티티는 int price(기본형), DTO는 Integer price(객체형)야. ItemResponse.from에서 item.getPrice()(int) → Integer로 들어갈 때 자동 박싱돼서 동작은 해. 문제 없어.
-    //    다만 알아둘 점: int는 null이 안 되니 "가격 미정"을 null로 표현 못 해. 가격은 항상 있는 값이니 int로 둔 거 합리적이야. 그대로 둬도 돼.
-
     public Item(Long id, String name, String rid, String description, int price, int sellPrice, ItemType type, ItemGrade grade) {
         this.id = id;
         this.name = name;
