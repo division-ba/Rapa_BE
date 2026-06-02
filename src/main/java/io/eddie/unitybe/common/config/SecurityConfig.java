@@ -15,6 +15,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/register").anonymous()
+                        .requestMatchers("/api/v1/items").anonymous()
+
                 )
                 .build();
 
