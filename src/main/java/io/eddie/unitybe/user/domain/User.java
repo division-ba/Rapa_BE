@@ -2,10 +2,7 @@ package io.eddie.unitybe.user.domain;
 
 import io.eddie.unitybe.common.domain.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -50,6 +47,19 @@ public class User extends BaseEntity {
         this.status = Status.ACTIVE;
         this.provider = Provider.LOCAL;
     }
+
+    public User(Long id, String email, String password, String nickname) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.nickname = nickname;
+        this.role = Role.USER;
+        this.status = Status.ACTIVE;
+        this.provider = Provider.LOCAL;
+    }
+
+
+
 
 
 }

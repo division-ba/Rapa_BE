@@ -13,6 +13,9 @@ public class SecurityConfig {
         return http
                 .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/users/register").anonymous()
+                )
                 .build();
 
     }

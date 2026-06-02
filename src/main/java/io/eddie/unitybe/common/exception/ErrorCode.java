@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
     /*User*/
-    EXIST_EMAIL(HttpStatus.BAD_REQUEST, "이미 사용 중인 이메일입니다.."),
+    EXIST_EMAIL(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다.."),
     /*Inventory*/
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 id의 아이템이 존재하지 않습니다."),
 
