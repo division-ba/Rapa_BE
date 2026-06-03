@@ -42,6 +42,7 @@ public class ItemService {
                 .orElseThrow(() -> new DiversionException(ErrorCode.ITEM_NOT_FOUND));
     }
 
+    @Transactional
     public void inputItems(MultipartFile file) throws IOException {
         String json = new String(file.getBytes(), StandardCharsets.UTF_8);
 
@@ -50,7 +51,7 @@ public class ItemService {
                 new TypeReference<List<ItemInputRequest>>() {}
         ).stream()
                 .map(item -> new Item(
-                        item.id(),
+                        null,
                         item.name(),
                         item.rId(),
                         item.description(),
