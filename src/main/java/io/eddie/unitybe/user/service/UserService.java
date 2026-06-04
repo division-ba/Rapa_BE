@@ -71,10 +71,8 @@ public class UserService implements UserDetailsService {
     }
 
     // 토큰 갱신
+    @Transactional
     public KeyPair refresh(RefreshRequestDto request) {
-//        if (!refreshRepository.existsByRefreshToken(request.refreshToken()))
-//            throw new DiversionException(ErrorCode.INVALID_REFRESH_TOKEN);
-
         //리프레쉬 토큰 확인
         RefreshToken refreshToken = refreshRepository.findByRefreshToken(request.refreshToken())
                 .orElseThrow(() -> new DiversionException(ErrorCode.INVALID_REFRESH_TOKEN));
@@ -83,11 +81,20 @@ public class UserService implements UserDetailsService {
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now()))
             throw new DiversionException(ErrorCode.INVALID_REFRESH_TOKEN);
 
-        // 유효하다면 AccessToken 다시 생성
+        // 유효하다면 AccessToken/RefreshToken 다시 생성
         User user = refreshToken.getUser();
-        String accessToken = tokenProvider.issueAccessToken(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+
+        //refresh토큰 유효시간 추출
+        Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
+        LocalDateTime expirationTime =
+                expiration.toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+
+        refreshToken.update(keyPair.refreshToken(), expirationTime);
 
         // 반환
-        return new KeyPair(accessToken, request.refreshToken(), jwtProperties.getValidations().getAccess());
+        return keyPair;
     }
 }

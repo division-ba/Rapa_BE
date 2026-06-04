@@ -1,5 +1,6 @@
 package io.eddie.unitybe.user.domain;
 
+import io.eddie.unitybe.common.domain.UpdateEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @NoArgsConstructor
-public class RefreshToken {
+public class RefreshToken extends UpdateEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
@@ -31,6 +32,11 @@ public class RefreshToken {
         this.refreshToken = refreshToken;
         this.expiresAt = expiresAt;
         this.user = user;
+    }
+
+    public void update(String refreshToken, LocalDateTime expiresAt) {
+        this.refreshToken = refreshToken;
+        this.expiresAt = expiresAt;
     }
 
 
