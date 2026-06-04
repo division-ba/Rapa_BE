@@ -3,6 +3,7 @@ package io.eddie.unitybe.user.controller;
 import io.eddie.unitybe.common.dto.ApiResponse;
 import io.eddie.unitybe.user.dto.KeyPair;
 import io.eddie.unitybe.user.dto.LogInRequestDto;
+import io.eddie.unitybe.user.dto.RefreshRequestDto;
 import io.eddie.unitybe.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final UserService userService;
 
+    //로그인
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<KeyPair>> login(@RequestBody @Valid LogInRequestDto request) {
         KeyPair keypair = userService.login(request);
         return new ResponseEntity<>(ApiResponse.success("로그인되었습니다.",  keypair), HttpStatus.OK);
+    }
+
+    //토큰 갱신
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<KeyPair>> refresh(@RequestBody @Valid RefreshRequestDto request) {
+        KeyPair keypair = userService.refresh(request);
+        return new ResponseEntity<>(ApiResponse.success(keypair), HttpStatus.OK);
     }
 }
