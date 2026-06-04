@@ -2,7 +2,10 @@ package io.eddie.unitybe.user.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.user.domain.Role;
 import io.eddie.unitybe.user.domain.User;
+import io.eddie.unitybe.user.dto.KeyPair;
+import io.eddie.unitybe.user.dto.LogInRequestDto;
 import io.eddie.unitybe.user.dto.SignUpRequestDto;
 import io.eddie.unitybe.user.dto.SignUpResponseDto;
 import io.eddie.unitybe.user.repository.UserRepository;
@@ -12,6 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,6 +34,9 @@ class UserServiceTest {
 
     @Mock
     PasswordEncoder passwordEncoder;
+
+    @Mock
+    TokenProvider tokenProvider;
 
 
 
@@ -97,5 +105,93 @@ class UserServiceTest {
                 assertThat(exception.getMessage()).isEqualTo(ErrorCode.EXIST_EMAIL.getMessage());
             }
         }
+    }
+
+    @Nested
+    @DisplayName("login메서드는")
+    public class Login {
+        String email;
+        String password;
+        String encodedPassword;
+        String nickname;
+
+        LogInRequestDto requestDto;
+        User savedUser;
+        KeyPair keyPair;
+
+        @BeforeEach
+        void setUp() {
+            email = "newgamer@test.com";
+            password = "mypassword123";
+            encodedPassword = "encodedpassword123";
+            nickname = "새싹게이머";
+
+            requestDto = new LogInRequestDto(email, password);
+            savedUser = new User(1L, email, encodedPassword, nickname);
+            keyPair = new KeyPair(
+                    "access-token",
+                    "refresh-token",
+                    900L
+            );
+
+        }
+
+        @Nested
+        @DisplayName("유효한 입력이 주어지면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("토큰 페어를 반환한다")
+            void it_return_token_pair() {
+                //given
+                given(userRepository.findByEmail(email)).willReturn(Optional.of(savedUser));
+                given(passwordEncoder.matches(any(String.class), any(String.class))).willReturn(true);
+                given(tokenProvider.issueKeyPair(any(Long.class), any(String.class), any(String.class), any(Role.class)))
+                        .willReturn(keyPair);
+                //when
+                KeyPair keyPair = userService.login(requestDto);
+                //then
+                Assertions.assertNotNull(keyPair.accessToken());
+                Assertions.assertNotNull(keyPair.refreshToken());
+                Assertions.assertNotNull(keyPair.accessExpiresInSeconds());
+            }
+        }
+
+        @Nested
+        @DisplayName("잘못된 이메일이 들어오면")
+        class Context_with_wrong_email {
+
+            @Test
+            @DisplayName("로그인 오류가 발생한다")
+            void it_throws_exist_email() {
+                //given
+                given(userRepository.findByEmail(email)).willReturn(Optional.empty());
+
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> userService.login(requestDto)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.LOGIN_NOT_MACH.getMessage());
+            }
+        }
+
+        @Nested
+        @DisplayName("잘못된 비밀번호가 들어오면")
+        class Context_with_wrong_password {
+
+            @Test
+            @DisplayName("로그인 오류가 발생한다")
+            void it_throws_exist_email() {
+                //given
+                given(userRepository.findByEmail(email)).willReturn(Optional.of(savedUser));
+                given(passwordEncoder.matches(any(String.class), any(String.class))).willReturn(false);
+
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> userService.login(requestDto)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.LOGIN_NOT_MACH.getMessage());
+            }
+        }
+
     }
 }

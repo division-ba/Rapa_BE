@@ -1,0 +1,27 @@
+package io.eddie.unitybe.user.controller;
+
+import io.eddie.unitybe.common.dto.ApiResponse;
+import io.eddie.unitybe.user.dto.KeyPair;
+import io.eddie.unitybe.user.dto.LogInRequestDto;
+import io.eddie.unitybe.user.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+public class AuthController {
+    private final UserService userService;
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<KeyPair>> login(@RequestBody @Valid LogInRequestDto request) {
+        KeyPair keypair = userService.login(request);
+        return new ResponseEntity<>(ApiResponse.success("로그인되었습니다.",  keypair), HttpStatus.OK);
+    }
+}
