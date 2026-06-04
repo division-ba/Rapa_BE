@@ -18,10 +18,9 @@ public class SecurityConfig {
                 .formLogin(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/register", "/api/v1/auth/login").anonymous()
+                        .requestMatchers("/api/v1/items/**").permitAll()
+                        .anyRequest().permitAll()
                 )
                 .build();
-
     }
-
-
 }
