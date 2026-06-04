@@ -28,16 +28,14 @@ public class ItemService {
     private final ObjectMapper om;
 
 
-    // 008: 전체 아이템 카탈로그
     public List<ItemResponse> getItems() {
-        return itemRepository.findAll().stream()
+        return itemRepository.findAllByDeletedAtIsNull().stream()
                 .map(ItemResponse::from)
                 .toList();
     }
 
-    // 009: 아이템 단건. 없으면 404.
     public ItemResponse getItem(Long id) {
-        return itemRepository.findById(id)
+        return itemRepository.findByIdAndDeletedAtIsNull(id)
                 .map(ItemResponse::from)
                 .orElseThrow(() -> new DiversionException(ErrorCode.ITEM_NOT_FOUND));
     }
@@ -51,7 +49,6 @@ public class ItemService {
                 new TypeReference<List<ItemInputRequest>>() {}
         ).stream()
                 .map(item -> new Item(
-                        null,
                         item.name(),
                         item.rId(),
                         item.description(),

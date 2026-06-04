@@ -20,8 +20,7 @@ public class Item extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 유니티 리소스 ID (에셋 연결 키). 도감 상 유일값.
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "rid", nullable = false, unique = true, length = 50)
     private String rid;
 
     @Column(nullable = false, length = 50)
@@ -44,8 +43,7 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private int sellPrice;
 
-    public Item(Long id, String name, String rid, String description, int price, int sellPrice, ItemType type, ItemGrade grade) {
-        this.id = id;
+    public Item(String name, String rid, String description, int price, int sellPrice, ItemType type, ItemGrade grade) {
         this.name = name;
         this.rid = rid;
         this.description = description;
