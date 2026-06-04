@@ -9,14 +9,15 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http){
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/users/register").anonymous()
+                        .requestMatchers("/api/v1/users/register").permitAll()
+                        .requestMatchers("/api/v1/items/**").permitAll()
+                        .anyRequest().permitAll()
                 )
                 .build();
-
     }
 }
