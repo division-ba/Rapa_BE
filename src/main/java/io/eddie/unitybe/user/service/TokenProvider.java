@@ -4,10 +4,7 @@ import io.eddie.unitybe.user.dto.KeyPair;
 import io.eddie.unitybe.user.dto.TokenBody;
 import io.eddie.unitybe.common.config.properties.JwtProperties;
 import io.eddie.unitybe.user.domain.Role;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +34,7 @@ public class TokenProvider {
     }
     public String issueRefreshToken(Long id, String email, String nickname, Role role) {
             return issue(id, email, nickname, role, jwtProperties.getValidations().getRefresh());
-        }
+    }
 
     //jwt 토큰 만들기
     private String issue(Long id, String email, String nickname, Role role, Long validTime) {
@@ -45,7 +42,7 @@ public class TokenProvider {
                 .subject(id.toString())
                 .claim("email", email)
                 .claim("nickname", nickname)
-                .claim("role",role.toString())
+                .claim("role",role.name())
                 .issuedAt(new Date())
                 .expiration(new Date(new Date().getTime() + validTime))
                 .signWith(getSecretKey())
@@ -81,6 +78,11 @@ public class TokenProvider {
                 .parseSignedClaims(token);
     }
 
+    public Date parseExpiration(String token) {
+        Jws<Claims> claims = parseClaims(token);
+        return claims.getPayload().getExpiration();
+    }
+
     //토큰 파싱
     public TokenBody parseJwt(String token) {
         Jws<Claims> claims = parseClaims(token);
@@ -88,7 +90,9 @@ public class TokenProvider {
         String sub =  claims.getPayload().getSubject();
         String email = claims.getPayload().get("email", String.class);
         String nickname = claims.getPayload().get("nickname", String.class);
-        Role role = claims.getPayload().get("role", Role.class);
-        return new TokenBody(Long.parseLong(sub),email, nickname, role);
+        String role = claims.getPayload().get("role", String.class);
+        Role userRole = Role.fromString(role);
+        log.info("User ::: email : {}, nickname : {}, role : {}", email, nickname, userRole);
+        return new TokenBody(Long.parseLong(sub),email, nickname, userRole);
     }
 }
