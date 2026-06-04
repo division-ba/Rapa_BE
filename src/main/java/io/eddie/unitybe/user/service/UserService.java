@@ -2,8 +2,10 @@ package io.eddie.unitybe.user.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.user.domain.RefreshToken;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.*;
+import io.eddie.unitybe.user.repository.RefreshTokenRepository;
 import io.eddie.unitybe.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
 
@@ -39,7 +42,7 @@ public class UserService implements UserDetailsService {
 
 
     //로그인
-    @Transactional(readOnly = true)
+    @Transactional
     public KeyPair login(LogInRequestDto request) {
         //이메일 확인
         User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new DiversionException(ErrorCode.LOGIN_NOT_MACH));
@@ -47,6 +50,10 @@ public class UserService implements UserDetailsService {
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new DiversionException(ErrorCode.LOGIN_NOT_MACH);
         // 토큰 발급
-        return tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(),  user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+
+        // refresh토큰 db 저장
+        refreshRepository.save(new RefreshToken(keyPair.refreshToken(), user));
+        return keyPair;
     }
 }
