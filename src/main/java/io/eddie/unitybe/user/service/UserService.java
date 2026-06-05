@@ -54,6 +54,7 @@ public class UserService implements UserDetailsService {
         // 비밀번호 확인
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new DiversionException(ErrorCode.LOGIN_NOT_MACH);
+        user.setLastLoginAt(LocalDateTime.now());
         // 토큰 발급
         KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getRole());
 
@@ -101,11 +102,17 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void logout(AuthUser authUser) {
         // 유저 찾기
-        User user = userRepository.findById(authUser.getId()).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
+        User user = userRepository.findById(authUser.getId()).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND));
 
         // 해당 유저의 refresh 토큰 모두 삭제
         List<RefreshToken> refreshTokens = refreshRepository.findByUserId(user.getId());
         refreshRepository.deleteAll(refreshTokens);
+    }
+
+    //내 계정 정보 조회
+    public UserProfileResponseDto getMyProfile(AuthUser authUser) {
+        User user = userRepository.findById(authUser.getId()).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND));
+        return UserProfileResponseDto.from(user);
     }
 
     //다른 도메인에서 호출하는 메서드

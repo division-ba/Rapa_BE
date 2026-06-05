@@ -276,7 +276,7 @@ class UserServiceTest {
     }
 
     @Nested
-    @DisplayName("refresh 메서드는")
+    @DisplayName("logout 메서드는")
     public class Logout {
         AuthUser authUser;
         String email = "newgamer@test.com";
@@ -314,6 +314,42 @@ class UserServiceTest {
             }
         }
 
+
+    }
+
+    @Nested
+    @DisplayName("getMyProfile 메서드는")
+    public class GetMyProfile {
+        AuthUser authUser;
+        String email = "newgamer@test.com";
+        String encodedPassword = "encodedpassword123";
+        String nickname = "새싹게이머";
+        User user;
+
+        @BeforeEach
+        void setUp() {
+            authUser = new AuthUser(1L, email, encodedPassword, "USER");
+            user = new User(1L, email, encodedPassword, nickname);
+        }
+        @Nested
+        @DisplayName("로그인이 되어있다면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("해당 유저의 계정정보를 보여준다")
+            void it_return_profile_information() {
+                //given
+                given(userRepository.findById(authUser.getId())).willReturn(Optional.of(user));
+                //when
+                UserProfileResponseDto responseDto = userService.getMyProfile(authUser);
+                //then
+                Assertions.assertNotNull(responseDto);
+                assertThat(responseDto.email()).isEqualTo(email);
+                assertThat(responseDto.nickname()).isEqualTo(nickname);
+                assertThat(responseDto.role()).isNotEmpty();
+                assertThat(responseDto.status()).isNotEmpty();
+                assertThat(responseDto.provider()).isNotEmpty();
+            }
+        }
 
     }
 }
