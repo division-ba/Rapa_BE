@@ -107,4 +107,9 @@ public class UserService implements UserDetailsService {
         List<RefreshToken> refreshTokens = refreshRepository.findByUserId(user.getId());
         refreshRepository.deleteAll(refreshTokens);
     }
+
+    //다른 도메인에서 호출하는 메서드
+    public User getUser(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND));
+    }
 }
