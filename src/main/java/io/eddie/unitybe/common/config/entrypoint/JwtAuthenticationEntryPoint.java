@@ -26,7 +26,7 @@ public class JwtAuthenticationEntryPoint
         response.getWriter().write("""
             {
               "success": false,
-              "message":"유효하지 않은 AccessToken입니다.",
+              "message":"인증이 필요합니다.",
               "data": null
             }
             """);
