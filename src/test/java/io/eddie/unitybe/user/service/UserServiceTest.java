@@ -17,12 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -269,6 +271,48 @@ class UserServiceTest {
             }
         }
 
+
+
+    }
+
+    @Nested
+    @DisplayName("refresh 메서드는")
+    public class Logout {
+        AuthUser authUser;
+        String email = "newgamer@test.com";
+        String encodedPassword = "encodedpassword123";
+        String nickname = "새싹게이머";
+        User user;
+        String refreshTokenString;
+        RefreshToken refreshToken1;
+        RefreshToken refreshToken2;
+        List<RefreshToken> refreshTokens;
+        @BeforeEach
+        void setUp() {
+            authUser = new AuthUser(1L, email, encodedPassword, "USER");
+            user = new User(1L, email, encodedPassword, nickname);
+            refreshTokenString = "refresh-token";
+            refreshToken1 = new RefreshToken(refreshTokenString, LocalDateTime.of(2026,5,15,10,5),user);
+            refreshToken2 = new RefreshToken(refreshTokenString, LocalDateTime.of(2026,6,15,10,5),user);
+            refreshTokens = List.of(refreshToken1, refreshToken2);
+
+        }
+        @Nested
+        @DisplayName("유효한 입력이 주어지면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("해당 유저아이디의 모든 리프레쉬 토큰이 사라진다")
+            void it_delete_all_refresh_tokens() {
+                //given
+                given(userRepository.findById(authUser.getId())).willReturn(Optional.of(user));
+                given(refreshRepository.findByUserId(user.getId()))
+                        .willReturn(refreshTokens);
+                //when
+                userService.logout(authUser);
+                //then
+                verify(refreshRepository).deleteAll(refreshTokens);
+            }
+        }
 
 
     }
