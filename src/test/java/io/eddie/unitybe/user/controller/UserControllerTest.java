@@ -6,8 +6,10 @@ import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.user.domain.User;
+import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.SignUpRequestDto;
 import io.eddie.unitybe.user.dto.SignUpResponseDto;
+import io.eddie.unitybe.user.dto.UserProfileResponseDto;
 import io.eddie.unitybe.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,12 +19,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,6 +56,7 @@ class UserControllerTest {
     @MockitoBean
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    Long userId;
     String email;
     String password;
     String nickname;
@@ -57,19 +64,28 @@ class UserControllerTest {
     SignUpRequestDto requestDto;
     SignUpResponseDto  responseDto;
 
+    AuthUser authUser;
+    User user;
+    UserProfileResponseDto profileResponseDto;
+
     @BeforeEach
     void setUp() {
+        userId = 1L;
         email = "newgamer@test.com";
         password = "mypassword123";
         nickname = "새싹게이머";
 
-        requestDto = new SignUpRequestDto(email, password, nickname);
-        responseDto = new SignUpResponseDto(new User (1L, email, password, nickname));
     }
 
     @Nested
     @DisplayName("POST /register 엔드포인트는")
     class Signup {
+        @BeforeEach
+        void setUp() {
+            requestDto = new SignUpRequestDto(email, password, nickname);
+            responseDto = new SignUpResponseDto(new User (userId, email, password, nickname));
+        }
+
         @Nested
         @DisplayName("유효한 입력값이 주어지면")
         class Context_with_valid_request {
@@ -193,6 +209,46 @@ class UserControllerTest {
             }
         }
 
+    }
+
+    @Nested
+    @DisplayName("GET /me 엔드포인트는")
+    class getMyProfile {
+        @BeforeEach
+        void setUp() {
+            authUser = new AuthUser(userId, email, password, "USER");
+            user = new User(userId, email, password, nickname);
+            profileResponseDto = UserProfileResponseDto.from(user);
+        }
+        @Nested
+        @DisplayName("유효한 토큰이 주어지면")
+        class Context_with_valid_request {
+
+            @Test
+            @DisplayName("200 상태와 내 계정 정보를 반환한다")
+            void it_return_200_ok_and_response_body() throws Exception {
+                //given
+                given(userService.getMyProfile(any())).willReturn(profileResponseDto);
+                //when-then
+                mockMvc.perform(
+                                get("/api/v1/users/me")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.data.userId").value(userId))
+                        .andExpect(jsonPath("$.data.email").value(email))
+                        .andExpect(jsonPath("$.data.nickname").value(nickname))
+                        .andDo(print());
+            }
+        }
     }
 
 
