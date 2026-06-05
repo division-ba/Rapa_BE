@@ -5,4 +5,5 @@ import io.eddie.unitybe.user.domain.User;
 
 public interface UserPlayerRepository {
     User save(User user, Player player);
+//    Player findPlayer(Long userId);
 }

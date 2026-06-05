@@ -2,6 +2,8 @@ package io.eddie.unitybe.user.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.player.domain.Player;
+import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.RefreshToken;
 import io.eddie.unitybe.user.domain.Role;
 import io.eddie.unitybe.user.domain.User;
@@ -35,6 +37,8 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private UserPlayerRepository userPlayerRepository;
+    @Mock
     private RefreshTokenRepository refreshRepository;
 
     @Mock
@@ -57,6 +61,7 @@ class UserServiceTest {
         SignUpRequestDto requestDto;
         User user;
         User savedUser;
+        Player player;
 
         @BeforeEach
         void setUp() {
@@ -67,6 +72,7 @@ class UserServiceTest {
 
             requestDto = new SignUpRequestDto(email, password, nickname);
             user = new User(email, encodedPassword, nickname);
+            player = new Player(user);
             savedUser = new User(1L, email, encodedPassword, nickname);
         }
 
@@ -80,7 +86,7 @@ class UserServiceTest {
                 //given
                 given(userRepository.existsByEmail(email)).willReturn(Boolean.FALSE);
                 given(passwordEncoder.encode(any(String.class))).willReturn(encodedPassword);
-                given(userRepository.save(any(User.class))).willReturn(savedUser);
+                given(userPlayerRepository.save(user,  player)).willReturn(savedUser);
 
                 //when
                 SignUpResponseDto responseDto = userService.signup(requestDto);
@@ -340,7 +346,7 @@ class UserServiceTest {
                 //given
                 given(userRepository.findById(authUser.getId())).willReturn(Optional.of(user));
                 //when
-                UserProfileResponseDto responseDto = userService.getMyProfile(authUser);
+                UserAccountResponseDto responseDto = userService.getMyProfile(authUser);
                 //then
                 Assertions.assertNotNull(responseDto);
                 assertThat(responseDto.email()).isEqualTo(email);

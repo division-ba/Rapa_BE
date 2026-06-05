@@ -9,7 +9,7 @@ import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.SignUpRequestDto;
 import io.eddie.unitybe.user.dto.SignUpResponseDto;
-import io.eddie.unitybe.user.dto.UserProfileResponseDto;
+import io.eddie.unitybe.user.dto.UserAccountResponseDto;
 import io.eddie.unitybe.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,7 +66,7 @@ class UserControllerTest {
 
     AuthUser authUser;
     User user;
-    UserProfileResponseDto profileResponseDto;
+    UserAccountResponseDto profileResponseDto;
 
     @BeforeEach
     void setUp() {
@@ -218,7 +218,7 @@ class UserControllerTest {
         void setUp() {
             authUser = new AuthUser(userId, email, password, "USER");
             user = new User(userId, email, password, nickname);
-            profileResponseDto = UserProfileResponseDto.from(user);
+            profileResponseDto = UserAccountResponseDto.from(user);
         }
         @Nested
         @DisplayName("유효한 토큰이 주어지면")

@@ -19,4 +19,9 @@ public class UserPlayerAdapter implements UserPlayerRepository {
         playerRepository.save(player);
         return savedUser;
     }
+//
+//    @Override
+//    public Player findPlayer(Long userId) {
+//
+//    }
 }
