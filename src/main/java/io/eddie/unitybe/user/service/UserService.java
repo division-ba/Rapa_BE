@@ -41,7 +41,7 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
-        return new UserDetailsImpl(user.getEmail(), user.getPassword(), user.getRole().name());
+        return new AuthUser(user.getId(), user.getEmail(), user.getPassword(), user.getRole().name());
     }
 
 
@@ -54,7 +54,7 @@ public class UserService implements UserDetailsService {
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new DiversionException(ErrorCode.LOGIN_NOT_MACH);
         // 토큰 발급
-        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getRole());
 
         //refresh토큰 유효시간 추출
         Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
@@ -81,7 +81,7 @@ public class UserService implements UserDetailsService {
 
         // 유효하다면 AccessToken/RefreshToken 다시 생성
         User user = refreshToken.getUser();
-        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getRole());
 
         //refresh토큰 유효시간 추출
         Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
