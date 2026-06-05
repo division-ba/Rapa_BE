@@ -14,8 +14,8 @@ spring:
 custom:
   jwt:
     validations:
-#      access: 900000  # 15분
-      access: 30000  # 테스트 : 30초
+      access: 900000  # 15분
+#      access: 30000  # 테스트 : 30초
       refresh: 604800000  #7일
     secrets:
       app-key: C0344D332B910BE455491E0943181C5CB423421F915AD6C3A7F9D069790CEAD52BE27865C77B80D04498AF135E6755EB9965EF5C6FE436564DA7D3FC02FBDFF9
