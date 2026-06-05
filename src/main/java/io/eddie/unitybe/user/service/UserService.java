@@ -2,8 +2,10 @@ package io.eddie.unitybe.user.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.user.domain.RefreshToken;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.*;
+import io.eddie.unitybe.user.repository.RefreshTokenRepository;
 import io.eddie.unitybe.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +16,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
 
@@ -34,12 +41,12 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
-        return new UserDetailsImpl(user.getEmail(), user.getPassword(), user.getRole().toString());
+        return new UserDetailsImpl(user.getEmail(), user.getPassword(), user.getRole().name());
     }
 
 
     //로그인
-    @Transactional(readOnly = true)
+    @Transactional
     public KeyPair login(LogInRequestDto request) {
         //이메일 확인
         User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new DiversionException(ErrorCode.LOGIN_NOT_MACH));
@@ -47,6 +54,45 @@ public class UserService implements UserDetailsService {
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new DiversionException(ErrorCode.LOGIN_NOT_MACH);
         // 토큰 발급
-        return tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(),  user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+
+        //refresh토큰 유효시간 추출
+        Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
+        LocalDateTime expirationTime =
+                expiration.toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+
+        // refresh토큰 db 저장
+        refreshRepository.save(new RefreshToken(keyPair.refreshToken(),expirationTime, user));
+        return keyPair;
+    }
+
+    // 토큰 갱신
+    @Transactional
+    public KeyPair refresh(RefreshRequestDto request) {
+        //리프레쉬 토큰 확인
+        RefreshToken refreshToken = refreshRepository.findByRefreshToken(request.refreshToken())
+                .orElseThrow(() -> new DiversionException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        // 유효시간이 지났으면 유호하지 않은 토큰
+        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now()))
+            throw new DiversionException(ErrorCode.INVALID_REFRESH_TOKEN);
+
+        // 유효하다면 AccessToken/RefreshToken 다시 생성
+        User user = refreshToken.getUser();
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+
+        //refresh토큰 유효시간 추출
+        Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
+        LocalDateTime expirationTime =
+                expiration.toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+
+        refreshToken.update(keyPair.refreshToken(), expirationTime);
+
+        // 반환
+        return keyPair;
     }
 }

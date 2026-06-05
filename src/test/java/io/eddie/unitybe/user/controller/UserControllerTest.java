@@ -1,6 +1,8 @@
 package io.eddie.unitybe.user.controller;
 
-import io.eddie.unitybe.common.config.SecurityConfig;
+import io.eddie.unitybe.common.config.JwtAuthenticationFilter;
+import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
+import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.user.domain.User;
@@ -12,8 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,8 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
-@Import(SecurityConfig.class)  // security 설정 가져오기
-//@AutoConfigureMockMvc(addFilters = false)  // 필터 끄기
+//@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, JwtAccessDeniedHandler.class})  // security 설정 가져오기
+@AutoConfigureMockMvc(addFilters = false)  // 필터 끄기
 @DisplayName("UserController 클래스의")
 class UserControllerTest {
     @Autowired
@@ -38,6 +40,15 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @MockitoBean
+    JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @MockitoBean
+    JwtAuthenticationFilter jwtAuthenticationFilter;
 
     String email;
     String password;
