@@ -1,6 +1,5 @@
 package io.eddie.unitybe.user.service;
 
-import io.eddie.unitybe.common.config.properties.JwtProperties;
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.user.domain.RefreshToken;
@@ -28,7 +27,6 @@ public class UserService implements UserDetailsService {
     private final RefreshTokenRepository refreshRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
-    private final JwtProperties jwtProperties;
 
     @Transactional
     public SignUpResponseDto signup(@Valid SignUpRequestDto requestDto) {

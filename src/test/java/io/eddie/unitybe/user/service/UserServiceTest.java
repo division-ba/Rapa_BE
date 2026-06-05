@@ -2,12 +2,11 @@ package io.eddie.unitybe.user.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.user.domain.RefreshToken;
 import io.eddie.unitybe.user.domain.Role;
 import io.eddie.unitybe.user.domain.User;
-import io.eddie.unitybe.user.dto.KeyPair;
-import io.eddie.unitybe.user.dto.LogInRequestDto;
-import io.eddie.unitybe.user.dto.SignUpRequestDto;
-import io.eddie.unitybe.user.dto.SignUpResponseDto;
+import io.eddie.unitybe.user.dto.*;
+import io.eddie.unitybe.user.repository.RefreshTokenRepository;
 import io.eddie.unitybe.user.repository.UserRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -31,6 +32,8 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private RefreshTokenRepository refreshRepository;
 
     @Mock
     PasswordEncoder passwordEncoder;
@@ -192,6 +195,81 @@ class UserServiceTest {
                 assertThat(exception.getMessage()).isEqualTo(ErrorCode.LOGIN_NOT_MACH.getMessage());
             }
         }
+
+    }
+
+    @Nested
+    @DisplayName("refresh 메서드는")
+    public class Refresh {
+        String refreshTokenString;
+        RefreshToken refreshToken;
+        RefreshToken refreshTokenEnd;
+        User savedUser;
+        KeyPair keyPair;
+        RefreshRequestDto requestDto;
+        @BeforeEach
+        void setUp() {
+            refreshTokenString = "refresh-token";
+            savedUser = new User(1L, "newgamer@test.com","encodedpassword123","새싹게이머");
+            refreshTokenEnd = new RefreshToken(refreshTokenString, LocalDateTime.of(2026,5,15,10,5),savedUser);
+            refreshToken = new RefreshToken(refreshTokenString, LocalDateTime.of(2026,6,15,10,5),savedUser);
+            keyPair = new KeyPair(
+                    "access-token",
+                    "refresh-token",
+                    900L
+            );
+            requestDto = new RefreshRequestDto(refreshTokenString);
+        }
+
+        @Nested
+        @DisplayName("유효한 입력이 주어지면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("새로운 accessToken을 담은 keyPair를 반환한다")
+            void it_return_token_pair() {
+                //given
+                given(refreshRepository.findByRefreshToken(refreshTokenString)).willReturn(Optional.of(refreshToken));
+                given(tokenProvider.issueKeyPair(any(Long.class), any(String.class), any(String.class), any(Role.class)))
+                        .willReturn(keyPair);
+                given(tokenProvider.parseExpiration(keyPair.refreshToken()))
+                        .willReturn(new Date(20260729));
+                //when
+                KeyPair keyPair = userService.refresh(new RefreshRequestDto(refreshTokenString));
+                //then
+                Assertions.assertNotNull(keyPair.accessToken());
+                Assertions.assertNotNull(keyPair.refreshToken());
+                Assertions.assertNotNull(keyPair.accessExpiresInSeconds());
+            }
+        }
+        @Nested
+        @DisplayName("잘못된 refresh토큰이 주어지면")
+        class Context_with_invalid_request {
+            @Test
+            @DisplayName("(잘못된 형식) 유효하지 않은 토큰 에러가 발생한다")
+            void it_throws_invalid_refresh_token() {
+                //given
+                given(refreshRepository.findByRefreshToken(refreshTokenString)).willReturn(Optional.empty());
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> userService.refresh(requestDto)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.INVALID_REFRESH_TOKEN.getMessage());
+            }
+
+            @Test
+            @DisplayName("(유효시간 만료) 유효하지 않은 토큰 에러가 발생한다")
+            void it_throws_invalid_refresh_token2() {
+                //given
+                given(refreshRepository.findByRefreshToken(refreshTokenString)).willReturn(Optional.of(refreshTokenEnd));
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> userService.refresh(requestDto)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.INVALID_REFRESH_TOKEN.getMessage());
+            }
+        }
+
+
 
     }
 }
