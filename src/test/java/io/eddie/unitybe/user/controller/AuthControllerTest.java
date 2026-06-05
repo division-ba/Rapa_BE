@@ -1,9 +1,14 @@
 package io.eddie.unitybe.user.controller;
 
+import io.eddie.unitybe.common.config.JwtAuthenticationFilter;
 import io.eddie.unitybe.common.config.SecurityConfig;
+import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
+import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
+import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.user.dto.KeyPair;
 import io.eddie.unitybe.user.dto.LogInRequestDto;
+import io.eddie.unitybe.user.dto.RefreshRequestDto;
 import io.eddie.unitybe.user.service.TokenProvider;
 import io.eddie.unitybe.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, JwtAccessDeniedHandler.class})
 @DisplayName("AuthController 클래스의")
 class AuthControllerTest {
     @Autowired
@@ -46,7 +51,8 @@ class AuthControllerTest {
     String refreshToken;
     Long accessExpiresInSeconds;
 
-    LogInRequestDto requestDto;
+    LogInRequestDto logInRequestDto;
+    RefreshRequestDto  refreshRequestDto;
     KeyPair keyPair;
 
     @BeforeEach
@@ -57,8 +63,10 @@ class AuthControllerTest {
         refreshToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJnYW1lckB0ZXN0LmNvbSIsIm5pY2tuYW1lIjoi7IOI7Iu56rKM7J2066i4Iiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODA1NDk3MTYsImV4cCI6MTc4MTE1NDUxNn0.OSLvXW1bqKPlXW6RYwY6xnlsNOpBvV_cVysKmCzI66mXCOZ45UOpcyuVZDI39l-eMPvsQUQ_NPXEep8N8T-2Jw";
         accessExpiresInSeconds = 900L;
 
-        requestDto = new LogInRequestDto(email, password);
+        logInRequestDto = new LogInRequestDto(email, password);
+        refreshRequestDto = new RefreshRequestDto(refreshToken);
         keyPair = new KeyPair(accessToken, refreshToken, accessExpiresInSeconds);
+
     }
 
     @Nested
@@ -72,13 +80,13 @@ class AuthControllerTest {
             @DisplayName("200 상태와 토큰페어을 반환한다")
             void it_return_200_ok_and_tokens_body() throws Exception {
                 //given
-                given(userService.login(requestDto)).willReturn(keyPair);
+                given(userService.login(logInRequestDto)).willReturn(keyPair);
                 //when-then
                 mockMvc.perform(
                                 post("/api/v1/auth/login")
                                         .with(csrf())
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content(om.writeValueAsString(requestDto))
+                                        .content(om.writeValueAsString(logInRequestDto))
                         )
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -98,8 +106,8 @@ class AuthControllerTest {
             void it_throws_400_and_return_invalid_email() throws Exception {
                 //given
                 email = "newgamer";
-                requestDto = new LogInRequestDto(email, password);
-                given(userService.login(requestDto)).willReturn(keyPair);
+                logInRequestDto = new LogInRequestDto(email, password);
+                given(userService.login(logInRequestDto)).willReturn(keyPair);
 
                 //whenthen
                 //when-then
@@ -107,7 +115,7 @@ class AuthControllerTest {
                                 post("/api/v1/auth/login")
                                         .with(csrf())
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content(om.writeValueAsString(requestDto))
+                                        .content(om.writeValueAsString(logInRequestDto))
                         )
                         .andExpect(status().isBadRequest())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -124,8 +132,8 @@ class AuthControllerTest {
             void it_throws_400_and_return_invalid_email() throws Exception {
                 //given
                 password = "mypa";
-                requestDto = new LogInRequestDto(email, password);
-                given(userService.login(requestDto)).willReturn(keyPair);
+                logInRequestDto = new LogInRequestDto(email, password);
+                given(userService.login(logInRequestDto)).willReturn(keyPair);
 
                 //whenthen
                 //when-then
@@ -133,7 +141,7 @@ class AuthControllerTest {
                                 post("/api/v1/auth/login")
                                         .with(csrf())
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content(om.writeValueAsString(requestDto))
+                                        .content(om.writeValueAsString(logInRequestDto))
                         )
                         .andExpect(status().isBadRequest())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -141,6 +149,63 @@ class AuthControllerTest {
                         .andDo(print());
             }
         }
+    }
+
+
+    @Nested
+    @DisplayName("POST /refresh 엔드포인트는")
+    class Refresh {
+        @Nested
+        @DisplayName("유효한 입력값이 주어지면")
+        class Context_with_valid_request {
+
+            @Test
+            @DisplayName("200 상태와 토큰페어을 반환한다")
+            void it_return_200_ok_and_tokens_body() throws Exception {
+                //given
+                given(userService.refresh(refreshRequestDto)).willReturn(keyPair);
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/auth/refresh")
+                                        .with(csrf())
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(refreshRequestDto))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").isEmpty())
+                        .andExpect(jsonPath("$.data.accessToken").value(accessToken))
+                        .andExpect(jsonPath("$.data.refreshToken").value(refreshToken))
+                        .andExpect(jsonPath("$.data.accessExpiresInSeconds").value(accessExpiresInSeconds))
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("유효하지 않은 refresh 토큰이 주어지면")
+        class Context_with_invalid_refresh_token {
+
+            @Test
+            @DisplayName("401 상태와 INVALID_REFRESH_TOKEN 에러을 반환한다")
+            void it_throws_401_and_return_invalid_refresh_token() throws Exception {
+                //given
+                given(userService.refresh(refreshRequestDto))
+                        .willThrow(new DiversionException(ErrorCode.INVALID_REFRESH_TOKEN));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/auth/refresh")
+                                        .with(csrf())
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(refreshRequestDto))
+                        )
+                        .andExpect(status().isUnauthorized())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_REFRESH_TOKEN.getMessage()))
+                        .andExpect(jsonPath("$.data").isEmpty())
+                        .andDo(print());
+            }
+        }
+
     }
 
 }
