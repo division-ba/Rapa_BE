@@ -2,6 +2,8 @@ package io.eddie.unitybe.user.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.player.domain.Player;
+import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.RefreshToken;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.*;
@@ -28,6 +30,7 @@ public class UserService implements UserDetailsService {
     private final RefreshTokenRepository refreshRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
+    private final UserPlayerRepository userPlayerRepository;
 
     @Transactional
     public SignUpResponseDto signup(@Valid SignUpRequestDto requestDto) {
@@ -35,7 +38,8 @@ public class UserService implements UserDetailsService {
         User user = new User(requestDto.email(),
                 passwordEncoder.encode(requestDto.password()),
                 requestDto.nickname());
-        User savedUser = userRepository.save(user);
+        Player player = new Player(user);
+        User savedUser = userPlayerRepository.save(user,  player);
         return new SignUpResponseDto(savedUser);
     }
 
@@ -110,9 +114,9 @@ public class UserService implements UserDetailsService {
     }
 
     //내 계정 정보 조회
-    public UserProfileResponseDto getMyProfile(AuthUser authUser) {
+    public UserAccountResponseDto getMyProfile(AuthUser authUser) {
         User user = userRepository.findById(authUser.getId()).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND));
-        return UserProfileResponseDto.from(user);
+        return UserAccountResponseDto.from(user);
     }
 
     //다른 도메인에서 호출하는 메서드
