@@ -21,27 +21,26 @@ public class TokenProvider {
     private final JwtProperties jwtProperties;
 
     //키페어
-    public KeyPair issueKeyPair(Long id, String email, String nickname, Role role) {
-        String accessToken = issueAccessToken(id, email, nickname, role);
-        String refreshToken = issueRefreshToken(id, email, nickname, role);
+    public KeyPair issueKeyPair(Long id, String email, Role role) {
+        String accessToken = issueAccessToken(id, email, role);
+        String refreshToken = issueRefreshToken(id, email, role);
 
         return new KeyPair(accessToken, refreshToken,
                 jwtProperties.getValidations().getAccess()/1000);
     }
     // access & refresh 토큰 만들기
-    public String issueAccessToken(Long id, String email, String nickname, Role role) {
-        return issue(id, email, nickname, role, jwtProperties.getValidations().getAccess());
+    public String issueAccessToken(Long id, String email, Role role) {
+        return issue(id, email, role, jwtProperties.getValidations().getAccess());
     }
-    public String issueRefreshToken(Long id, String email, String nickname, Role role) {
-            return issue(id, email, nickname, role, jwtProperties.getValidations().getRefresh());
+    public String issueRefreshToken(Long id, String email, Role role) {
+            return issue(id, email, role, jwtProperties.getValidations().getRefresh());
     }
 
     //jwt 토큰 만들기
-    private String issue(Long id, String email, String nickname, Role role, Long validTime) {
+    private String issue(Long id, String email, Role role, Long validTime) {
         return Jwts.builder()
                 .subject(id.toString())
                 .claim("email", email)
-                .claim("nickname", nickname)
                 .claim("role",role.name())
                 .issuedAt(new Date())
                 .expiration(new Date(new Date().getTime() + validTime))
@@ -93,10 +92,10 @@ public class TokenProvider {
 
         String sub =  claims.getPayload().getSubject();
         String email = claims.getPayload().get("email", String.class);
-        String nickname = claims.getPayload().get("nickname", String.class);
-        String role = claims.getPayload().get("role", String.class);
-        Role userRole = Role.fromString(role);
-        log.info("User ::: email : {}, nickname : {}, role : {}", email, nickname, userRole);
-        return new TokenBody(Long.parseLong(sub),email, nickname, userRole);
+        Role role = Role.fromString(
+                claims.getPayload().get("role", String.class)
+        );
+        log.info("User ::: email : {}, role : {}", email, role);
+        return new TokenBody(Long.parseLong(sub),email, role);
     }
 }

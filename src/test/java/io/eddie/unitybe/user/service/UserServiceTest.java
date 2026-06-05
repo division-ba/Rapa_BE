@@ -148,7 +148,7 @@ class UserServiceTest {
                 //given
                 given(userRepository.findByEmail(email)).willReturn(Optional.of(savedUser));
                 given(passwordEncoder.matches(any(String.class), any(String.class))).willReturn(true);
-                given(tokenProvider.issueKeyPair(any(Long.class), any(String.class), any(String.class), any(Role.class)))
+                given(tokenProvider.issueKeyPair(any(Long.class), any(String.class), any(Role.class)))
                         .willReturn(keyPair);
                 //when
                 KeyPair keyPair = userService.login(requestDto);
@@ -229,7 +229,7 @@ class UserServiceTest {
             void it_return_token_pair() {
                 //given
                 given(refreshRepository.findByRefreshToken(refreshTokenString)).willReturn(Optional.of(refreshToken));
-                given(tokenProvider.issueKeyPair(any(Long.class), any(String.class), any(String.class), any(Role.class)))
+                given(tokenProvider.issueKeyPair(any(Long.class), any(String.class), any(Role.class)))
                         .willReturn(keyPair);
                 given(tokenProvider.parseExpiration(keyPair.refreshToken()))
                         .willReturn(new Date(20260729));
