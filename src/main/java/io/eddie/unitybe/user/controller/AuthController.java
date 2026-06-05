@@ -1,6 +1,7 @@
 package io.eddie.unitybe.user.controller;
 
 import io.eddie.unitybe.common.dto.ApiResponse;
+import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.KeyPair;
 import io.eddie.unitybe.user.dto.LogInRequestDto;
 import io.eddie.unitybe.user.dto.RefreshRequestDto;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,5 +34,11 @@ public class AuthController {
     public ResponseEntity<ApiResponse<KeyPair>> refresh(@RequestBody @Valid RefreshRequestDto request) {
         KeyPair keypair = userService.refresh(request);
         return new ResponseEntity<>(ApiResponse.success(keypair), HttpStatus.OK);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal AuthUser user) {
+        userService.logout(user);
+        return new ResponseEntity<>(ApiResponse.success("로그아웃되었습니다."), HttpStatus.OK);
     }
 }
