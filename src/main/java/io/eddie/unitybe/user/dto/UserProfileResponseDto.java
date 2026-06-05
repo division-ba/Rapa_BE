@@ -16,6 +16,6 @@ public record UserProfileResponseDto(
     public static UserProfileResponseDto from (User user) {
         return new UserProfileResponseDto(user.getId(), user.getEmail(), user.getNickname(),
                 user.getRole().name(), user.getStatus().name(), user.getProvider().name(),
-                user.getProfileImageUrl(), user.getCreatedAt().toString(), user.getLastLoginAt()==null? null : user.getLastLoginAt().toString());
+                user.getProfileImageUrl(), user.getCreatedAt()==null? null : user.getCreatedAt().toString(), user.getLastLoginAt()==null? null : user.getLastLoginAt().toString());
     }
 }
