@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +42,7 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
-        return new UserDetailsImpl(user.getEmail(), user.getPassword(), user.getRole().name());
+        return new AuthUser(user.getId(), user.getEmail(), user.getPassword(), user.getRole().name());
     }
 
 
@@ -54,7 +55,7 @@ public class UserService implements UserDetailsService {
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new DiversionException(ErrorCode.LOGIN_NOT_MACH);
         // 토큰 발급
-        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getRole());
 
         //refresh토큰 유효시간 추출
         Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
@@ -81,7 +82,7 @@ public class UserService implements UserDetailsService {
 
         // 유효하다면 AccessToken/RefreshToken 다시 생성
         User user = refreshToken.getUser();
-        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        KeyPair keyPair = tokenProvider.issueKeyPair(user.getId(), user.getEmail(), user.getRole());
 
         //refresh토큰 유효시간 추출
         Date expiration = tokenProvider.parseExpiration(keyPair.refreshToken());
@@ -94,5 +95,21 @@ public class UserService implements UserDetailsService {
 
         // 반환
         return keyPair;
+    }
+
+    // 로그아웃
+    @Transactional
+    public void logout(AuthUser authUser) {
+        // 유저 찾기
+        User user = userRepository.findById(authUser.getId()).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
+
+        // 해당 유저의 refresh 토큰 모두 삭제
+        List<RefreshToken> refreshTokens = refreshRepository.findByUserId(user.getId());
+        refreshRepository.deleteAll(refreshTokens);
+    }
+
+    //다른 도메인에서 호출하는 메서드
+    public User getUser(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND));
     }
 }

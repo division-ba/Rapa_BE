@@ -6,6 +6,7 @@ import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
 import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.KeyPair;
 import io.eddie.unitybe.user.dto.LogInRequestDto;
 import io.eddie.unitybe.user.dto.RefreshRequestDto;
@@ -19,11 +20,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -55,6 +58,8 @@ class AuthControllerTest {
     RefreshRequestDto  refreshRequestDto;
     KeyPair keyPair;
 
+    AuthUser authUser;
+
     @BeforeEach
     void setUp() {
         email = "newgamer@test.com";
@@ -66,7 +71,7 @@ class AuthControllerTest {
         logInRequestDto = new LogInRequestDto(email, password);
         refreshRequestDto = new RefreshRequestDto(refreshToken);
         keyPair = new KeyPair(accessToken, refreshToken, accessExpiresInSeconds);
-
+        authUser = new AuthUser(1L, email, password, "USER");
     }
 
     @Nested
@@ -206,6 +211,59 @@ class AuthControllerTest {
             }
         }
 
+    }
+
+    @Nested
+    @DisplayName("POST /logout 엔드포인트는")
+    class Logout {
+        @Nested
+        @DisplayName("유효한 입력값이 주어지면")
+        class Context_with_valid_request {
+
+            @Test
+            @DisplayName("200 상태와 메세지을 반환한다")
+            void it_return_200_ok_and_message() throws Exception {
+
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/auth/logout")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value("로그아웃되었습니다."))
+                        .andExpect(jsonPath("$.data").isEmpty())
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("토큰이 없다면")
+        class Context_without_token {
+
+            @Test
+            @DisplayName("401 상태와 메세지을 반환한다")
+            void it_return_401_and_message() throws Exception {
+
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/auth/logout")
+                                        .with(csrf())
+                        )
+                        .andExpect(status().isUnauthorized())
+                        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))  //application/json;charset=UTF-8
+                        .andExpect(jsonPath("$.message").value("인증이 필요합니다."))
+                        .andExpect(jsonPath("$.data").isEmpty())
+                        .andDo(print());
+            }
+        }
     }
 
 }
