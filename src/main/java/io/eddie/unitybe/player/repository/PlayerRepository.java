@@ -10,9 +10,8 @@ public interface PlayerRepository extends JpaRepository<Player,Long> {
     @Query("""
         select p
         from Player p
-        left join User u
-        on p.id = u.id
-        where u.id = :userId
+        join fetch p.user
+        where p.user.id = :userId
     """)
     Optional<Player> findByUserIdWithUser(Long userId);
 }

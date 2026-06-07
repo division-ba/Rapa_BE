@@ -12,9 +12,11 @@ import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.UserAccountResponseDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PlayerService {
@@ -25,6 +27,7 @@ public class PlayerService {
     //유저 전체 데이터 조회
     @Transactional(readOnly = true)
     public UserDataResponseDto getUserData(AuthUser authUser) {
+        log.info("PlayerService.getUserData : id ::: {}", authUser.getId());
         Player player = playerRepository.findByUserIdWithUser(authUser.getId())
                 .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
         User user = player.getUser();
