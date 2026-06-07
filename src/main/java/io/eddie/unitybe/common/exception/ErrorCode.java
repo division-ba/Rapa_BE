@@ -18,8 +18,12 @@ public enum ErrorCode {
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
 
     /*Player*/
-    NOT_FOUND_PLAYER(HttpStatus.UNAUTHORIZED, "해당하는 id의 플레이어를 찾을 수 없습니다."),
+    PLAYER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "해당하는 id의 플레이어를 찾을 수 없습니다."),
 
+    /*Friend*/
+    SELF_FRIEND_REQUEST(HttpStatus.BAD_REQUEST, "자기 자신에게 친구 요청을 보낼 수 없습니다."),
+    EXIST_FRIEND_REQUEST(HttpStatus.CONFLICT, "이미 보낸 친구 요청이 있습니다."),
+    EXIST_FRIEND(HttpStatus.CONFLICT, "이미 친구 관계입니다. "),
     /*Inventory*/
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 id의 아이템이 존재하지 않습니다."),
 

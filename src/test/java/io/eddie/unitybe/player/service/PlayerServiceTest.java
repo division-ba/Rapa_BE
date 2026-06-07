@@ -5,7 +5,6 @@ import io.eddie.unitybe.player.dto.UserDataResponseDto;
 import io.eddie.unitybe.player.dto.UserProfileResponseDto;
 import io.eddie.unitybe.player.dto.UserWalletResponseDto;
 import io.eddie.unitybe.player.repository.PlayerRepository;
-import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.AuthUser;
 import org.junit.jupiter.api.*;
@@ -26,8 +25,6 @@ class PlayerServiceTest {
 
     @Mock
     private PlayerRepository playerRepository;
-    @Mock
-    private UserPlayerRepository userPlayerRepository;
 
     AuthUser authUser;
     Long userId = 1L;
