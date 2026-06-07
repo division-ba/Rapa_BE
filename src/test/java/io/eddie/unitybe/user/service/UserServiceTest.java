@@ -342,7 +342,7 @@ class UserServiceTest {
         class Context_with_valid_request {
             @Test
             @DisplayName("해당 유저의 계정정보를 보여준다")
-            void it_return_profile_information() {
+            void it_return_account_information() {
                 //given
                 given(userRepository.findById(authUser.getId())).willReturn(Optional.of(user));
                 //when

@@ -1,5 +1,7 @@
 package io.eddie.unitybe.player.service;
 
+import io.eddie.unitybe.common.exception.DiversionException;
+import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.player.domain.Player;
 import io.eddie.unitybe.player.dto.UserDataResponseDto;
 import io.eddie.unitybe.player.dto.UserProfileResponseDto;
@@ -11,6 +13,7 @@ import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.UserAccountResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,9 +22,11 @@ public class PlayerService {
     private final UserPlayerRepository userPlayerRepository;
 
 
-    //
+    //유저 전체 데이터 조회
+    @Transactional(readOnly = true)
     public UserDataResponseDto getUserData(AuthUser authUser) {
-        Player player = playerRepository.findByUserIdWithUser(authUser.getId());
+        Player player = playerRepository.findByUserIdWithUser(authUser.getId())
+                .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
         User user = player.getUser();
         UserAccountResponseDto account = UserAccountResponseDto.from(user);
         UserProfileResponseDto profile = new UserProfileResponseDto(player.getLevel(), player.getExp(), player.getTotalPlaySeconds());

@@ -4,6 +4,8 @@ import io.eddie.unitybe.player.domain.Player;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
+
 public interface PlayerRepository extends JpaRepository<Player,Long> {
     @Query("""
         select p
@@ -12,5 +14,5 @@ public interface PlayerRepository extends JpaRepository<Player,Long> {
         on p.id = u.id
         where u.id = :userId
     """)
-    Player findByUserIdWithUser(Long userId);
+    Optional<Player> findByUserIdWithUser(Long userId);
 }
