@@ -2,6 +2,7 @@ package io.eddie.unitybe.player.service;
 
 import io.eddie.unitybe.player.domain.Player;
 import io.eddie.unitybe.player.dto.UserDataResponseDto;
+import io.eddie.unitybe.player.dto.UserProfileResponseDto;
 import io.eddie.unitybe.player.repository.PlayerRepository;
 import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.User;
@@ -27,23 +28,24 @@ class PlayerServiceTest {
     @Mock
     private UserPlayerRepository userPlayerRepository;
 
+    AuthUser authUser;
+    Long userId = 1L;
+    String email = "newgamer@test.com";
+    String encodedPassword = "encodedpassword123";
+    String nickname = "새싹게이머";
+    Player player;
+    User user;
+
+    @BeforeEach
+    void setUp() {
+        authUser = new AuthUser(userId, email, encodedPassword, "USER");
+        user = new User(userId, email, encodedPassword, nickname);
+        player = new Player(user);
+    }
+
     @Nested
     @DisplayName("getUserData 메서드는")
     public class GetUserData {
-        AuthUser authUser;
-        Long userId = 1L;
-        String email = "newgamer@test.com";
-        String encodedPassword = "encodedpassword123";
-        String nickname = "새싹게이머";
-        Player player;
-        User user;
-
-        @BeforeEach
-        void setUp() {
-            authUser = new AuthUser(userId, email, encodedPassword, "USER");
-            user = new User(userId, email, encodedPassword, nickname);
-            player = new Player(user);
-        }
         @Nested
         @DisplayName("로그인이 되어있다면")
         class Context_with_valid_request {
@@ -66,6 +68,30 @@ class PlayerServiceTest {
                 assertThat(responseDto.profile().totalPlaySeconds()).isNotNull();
                 assertThat(responseDto.wallet().gold()).isNotNull();
                 assertThat(responseDto.wallet().gem()).isNotNull();
+            }
+
+        }
+
+    }
+
+    @Nested
+    @DisplayName("getUserProfile 메서드는")
+    public class GetUserProfile {
+        @Nested
+        @DisplayName("로그인이 되어있다면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("해당 유저의 모든 계정정보를 보여준다")
+            void it_return_profile_information() {
+                //given
+                given(playerRepository.findById(authUser.getId())).willReturn(Optional.of(player));
+                //when
+                UserProfileResponseDto responseDto = playerService.getUserProfile(authUser);
+                //then
+                Assertions.assertNotNull(responseDto);
+                assertThat(responseDto.level()).isEqualTo(player.getLevel());
+                assertThat(responseDto.exp()).isEqualTo(player.getExp());
+                assertThat(responseDto.totalPlaySeconds()).isEqualTo(player.getTotalPlaySeconds());
             }
 
         }
