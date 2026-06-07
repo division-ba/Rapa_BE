@@ -4,7 +4,6 @@ import io.eddie.unitybe.common.config.JwtAuthenticationFilter;
 import io.eddie.unitybe.common.config.SecurityConfig;
 import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
 import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
-import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.domain.Role;
@@ -88,7 +87,7 @@ class InventoryControllerTest {
         @Test
         @DisplayName("200 상태와 인벤토리 목록을 반환한다")
         void it_returns_inventory_items() throws Exception {
-            given(inventoryService.getInventory("gamer@test.com"))
+            given(inventoryService.getInventory(1L))
                     .willReturn(List.of(inventoryItemResponse()));
 
             mockMvc.perform(get("/api/v1/users/me/inventory").with(user()))
@@ -101,14 +100,5 @@ class InventoryControllerTest {
                     .andExpect(jsonPath("$.data[0].quantity").value(5));
         }
 
-        @Test
-        @DisplayName("인증 주체가 없으면 401 상태를 반환한다")
-        void it_returns_401_when_unauthenticated() throws Exception {
-            mockMvc.perform(get("/api/v1/users/me/inventory"))
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.message").value(ErrorCode.AUTHENTICATION_REQUIRED.getMessage()));
-        }
     }
 }

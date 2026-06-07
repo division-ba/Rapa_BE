@@ -1,11 +1,10 @@
 package io.eddie.unitybe.inventory.controller;
 
 import io.eddie.unitybe.common.dto.ApiResponse;
-import io.eddie.unitybe.common.exception.DiversionException;
-import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.dto.AuthUser;
+import io.eddie.unitybe.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,18 +20,13 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final UserService userService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<InventoryItemResponseDto>>> getInventory(
-            @AuthenticationPrincipal AuthUser userDetails
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        return ResponseEntity.ok(ApiResponse.success(inventoryService.getInventory(getEmail(userDetails))));
-    }
-
-    private String getEmail(AuthUser userDetails) {
-        if (userDetails == null) {
-            throw new DiversionException(ErrorCode.AUTHENTICATION_REQUIRED);
-        }
-        return userDetails.getUsername();
+        userService.checkUser(authUser.getId());
+        return ResponseEntity.ok(ApiResponse.success(inventoryService.getInventory(authUser.getId())));
     }
 }

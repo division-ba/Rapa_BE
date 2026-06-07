@@ -7,7 +7,6 @@ import io.eddie.unitybe.item.entity.Item;
 import io.eddie.unitybe.item.entity.ItemGrade;
 import io.eddie.unitybe.item.entity.ItemType;
 import io.eddie.unitybe.user.domain.User;
-import io.eddie.unitybe.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -30,14 +28,11 @@ class InventoryServiceTest {
     @Mock
     private InventoryItemRepository inventoryItemRepository;
 
-    @Mock
-    private UserRepository userRepository;
-
     private InventoryService inventoryService;
 
     @BeforeEach
     void setUp() {
-        inventoryService = new InventoryService(inventoryItemRepository, userRepository);
+        inventoryService = new InventoryService(inventoryItemRepository);
     }
 
     private User user() {
@@ -75,11 +70,10 @@ class InventoryServiceTest {
         @Test
         @DisplayName("삭제되지 않은 인벤토리 아이템 목록을 반환한다")
         void it_returns_not_deleted_inventory_items() {
-            given(userRepository.findByEmail("gamer@test.com")).willReturn(Optional.of(user()));
             given(inventoryItemRepository.findAllByUserIdAndDeletedAtIsNull(1L))
                     .willReturn(List.of(inventoryItem(3)));
 
-            List<InventoryItemResponseDto> responses = inventoryService.getInventory("gamer@test.com");
+            List<InventoryItemResponseDto> responses = inventoryService.getInventory(1L);
 
             assertThat(responses.size()).isEqualTo(1);
             assertThat(responses.getFirst().userItemId()).isEqualTo(10L);
