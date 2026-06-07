@@ -3,6 +3,7 @@ package io.eddie.unitybe.player.service;
 import io.eddie.unitybe.player.domain.Player;
 import io.eddie.unitybe.player.dto.UserDataResponseDto;
 import io.eddie.unitybe.player.dto.UserProfileResponseDto;
+import io.eddie.unitybe.player.dto.UserWalletResponseDto;
 import io.eddie.unitybe.player.repository.PlayerRepository;
 import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.User;
@@ -96,6 +97,27 @@ class PlayerServiceTest {
 
         }
 
+    }
+
+    @Nested
+    @DisplayName("getUserWallet 메서드는")
+    public class GetUserWallet {
+        @Nested
+        @DisplayName("로그인이 되어있다면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("해당 유저의 지갑정보를 보여준다")
+            void it_return_wallet_information() {
+                //given
+                given(playerRepository.findById(authUser.getId())).willReturn(Optional.of(player));
+                //when
+                UserWalletResponseDto responseDto = playerService.getUserWallet(authUser);
+                //then
+                Assertions.assertNotNull(responseDto);
+                assertThat(responseDto.gold()).isEqualTo(player.getGold());
+                assertThat(responseDto.gem()).isEqualTo(player.getGem());
+            }
+        }
     }
 
 }
