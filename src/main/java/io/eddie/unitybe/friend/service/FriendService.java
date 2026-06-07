@@ -11,6 +11,7 @@ import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
@@ -20,6 +21,7 @@ public class FriendService {
     private final UserRepository userRepository;
     private final FriendRepository friendRepository;
 
+    @Transactional
     public FriendRequestResponseDto requestFriend(AuthUser authUser, FriendRequestDto request) {
         // 자기자신에게 보낸 경우 에러 반환
         if (Objects.equals(authUser.getId(), request.toUserId()))
