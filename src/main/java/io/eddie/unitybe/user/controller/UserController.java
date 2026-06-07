@@ -4,7 +4,7 @@ import io.eddie.unitybe.common.dto.ApiResponse;
 import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.SignUpRequestDto;
 import io.eddie.unitybe.user.dto.SignUpResponseDto;
-import io.eddie.unitybe.user.dto.UserProfileResponseDto;
+import io.eddie.unitybe.user.dto.UserAccountResponseDto;
 import io.eddie.unitybe.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +28,8 @@ public class UserController {
 
     //내 계정 정보 조회
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserProfileResponseDto>> getMyProfile(@AuthenticationPrincipal AuthUser authUser) {
-        UserProfileResponseDto responseDto = userService.getMyProfile(authUser);
+    public ResponseEntity<ApiResponse<UserAccountResponseDto>> getMyProfile(@AuthenticationPrincipal AuthUser authUser) {
+        UserAccountResponseDto responseDto = userService.getMyProfile(authUser);
         return  new ResponseEntity<>(ApiResponse.success(responseDto), HttpStatus.OK);
     }
 

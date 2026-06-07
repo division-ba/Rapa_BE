@@ -1,6 +1,7 @@
 package io.eddie.unitybe.user.domain;
 
 import io.eddie.unitybe.common.domain.BaseEntity;
+import io.eddie.unitybe.player.domain.Player;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,6 +36,10 @@ public class User extends BaseEntity {
 
     @Setter
     private String profileImageUrl;
+
+    @Setter
+    @OneToOne(mappedBy="user")
+    private Player player;
 
     @Setter
     private LocalDateTime lastLoginAt;
