@@ -164,4 +164,45 @@ class PlayerControllerTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("GET /wallet 엔드포인트는")
+    class getMyWallet {
+        UserWalletResponseDto responseDto;
+        Long gold = 0L;
+        Long gem = 0L;
+        @BeforeEach
+        void setUp() {
+            responseDto = new UserWalletResponseDto(gold, gem);
+        }
+
+        @Nested
+        @DisplayName("유효한 토큰이 주어지면")
+        class Context_with_valid_request {
+
+            @Test
+            @DisplayName("200 상태와 내 지갑 정보를 반환한다")
+            void it_return_200_ok_and_response_body() throws Exception {
+                //given
+                given(playerService.getUserWallet(any())).willReturn(responseDto);
+                //when-then
+                mockMvc.perform(
+                                get("/api/v1/users/me/wallet")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.data.gold").value(gold))
+                        .andExpect(jsonPath("$.data.gem").value(gem))
+                        .andDo(print());
+            }
+        }
+    }
 }

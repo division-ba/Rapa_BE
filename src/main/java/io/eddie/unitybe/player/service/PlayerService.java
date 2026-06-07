@@ -43,6 +43,13 @@ public class PlayerService {
     public UserProfileResponseDto getUserProfile(AuthUser authUser) {
         Player player = playerRepository.findById(authUser.getId())
                 .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
-            return new UserProfileResponseDto(player.getLevel(), player.getExp(), player.getTotalPlaySeconds());
+        return new UserProfileResponseDto(player.getLevel(), player.getExp(), player.getTotalPlaySeconds());
+    }
+
+    @Transactional(readOnly = true)
+    public UserWalletResponseDto getUserWallet(AuthUser authUser) {
+        Player player = playerRepository.findById(authUser.getId())
+                .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
+        return new UserWalletResponseDto(player.getGold(), player.getGem());
     }
 }
