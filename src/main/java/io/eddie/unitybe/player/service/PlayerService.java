@@ -29,7 +29,7 @@ public class PlayerService {
     public UserDataResponseDto getUserData(AuthUser authUser) {
         log.info("PlayerService.getUserData : id ::: {}", authUser.getId());
         Player player = playerRepository.findByUserIdWithUser(authUser.getId())
-                .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
+                .orElseThrow(() -> new DiversionException(ErrorCode.PLAYER_NOT_FOUND));
         User user = player.getUser();
         UserAccountResponseDto account = UserAccountResponseDto.from(user);
         UserProfileResponseDto profile = new UserProfileResponseDto(player.getLevel(), player.getExp(), player.getTotalPlaySeconds());
@@ -42,14 +42,14 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public UserProfileResponseDto getUserProfile(AuthUser authUser) {
         Player player = playerRepository.findById(authUser.getId())
-                .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
+                .orElseThrow(() -> new DiversionException(ErrorCode.PLAYER_NOT_FOUND));
         return new UserProfileResponseDto(player.getLevel(), player.getExp(), player.getTotalPlaySeconds());
     }
 
     @Transactional(readOnly = true)
     public UserWalletResponseDto getUserWallet(AuthUser authUser) {
         Player player = playerRepository.findById(authUser.getId())
-                .orElseThrow(() -> new DiversionException(ErrorCode.NOT_FOUND_PLAYER));
+                .orElseThrow(() -> new DiversionException(ErrorCode.PLAYER_NOT_FOUND));
         return new UserWalletResponseDto(player.getGold(), player.getGem());
     }
 }
