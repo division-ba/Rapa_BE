@@ -2,13 +2,16 @@ package io.eddie.unitybe.inventory.controller;
 
 import io.eddie.unitybe.common.dto.ApiResponse;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
+import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.dto.AuthUser;
-import io.eddie.unitybe.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,12 +23,20 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
-    private final UserService userService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<InventoryItemResponseDto>>> getInventory(
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return ResponseEntity.ok(ApiResponse.success(inventoryService.getInventory(authUser.getId())));
+    }
+
+    @PostMapping("/pickup")
+    public ResponseEntity<ApiResponse<InventoryItemResponseDto>> pickup(
+            @AuthenticationPrincipal AuthUser authUser,
+            @Valid @RequestBody InventoryPickupRequestDto request
+    ) {
+        InventoryItemResponseDto response = inventoryService.pickup(authUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("아이템을 획득했습니다.", response));
     }
 }
