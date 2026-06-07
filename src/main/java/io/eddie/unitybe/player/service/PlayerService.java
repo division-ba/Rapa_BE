@@ -7,7 +7,6 @@ import io.eddie.unitybe.player.dto.UserDataResponseDto;
 import io.eddie.unitybe.player.dto.UserProfileResponseDto;
 import io.eddie.unitybe.player.dto.UserWalletResponseDto;
 import io.eddie.unitybe.player.repository.PlayerRepository;
-import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.AuthUser;
 import io.eddie.unitybe.user.dto.UserAccountResponseDto;
@@ -21,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PlayerService {
     private final PlayerRepository playerRepository;
-    private final UserPlayerRepository userPlayerRepository;
 
 
     //유저 전체 데이터 조회
