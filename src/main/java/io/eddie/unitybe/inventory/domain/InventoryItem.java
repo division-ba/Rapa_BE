@@ -1,4 +1,4 @@
-package io.eddie.unitybe.inventory.entity;
+package io.eddie.unitybe.inventory.domain;
 
 import io.eddie.unitybe.common.domain.BaseEntity;
 import io.eddie.unitybe.item.entity.Item;

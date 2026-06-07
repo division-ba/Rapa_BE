@@ -2,7 +2,7 @@ package io.eddie.unitybe.inventory.service;
 
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
-import io.eddie.unitybe.inventory.dto.InventoryItemResponse;
+import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.repository.InventoryItemRepository;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.repository.UserRepository;
@@ -20,11 +20,11 @@ public class InventoryService {
     private final InventoryItemRepository inventoryItemRepository;
     private final UserRepository userRepository;
 
-    public List<InventoryItemResponse> getInventory(String email) {
+    public List<InventoryItemResponseDto> getInventory(String email) {
         User user = getUser(email);
 
         return inventoryItemRepository.findAllByUserIdAndDeletedAtIsNull(user.getId()).stream()
-                .map(InventoryItemResponse::from)
+                .map(InventoryItemResponseDto::from)
                 .toList();
     }
 

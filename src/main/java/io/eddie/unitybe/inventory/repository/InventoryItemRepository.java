@@ -1,6 +1,6 @@
 package io.eddie.unitybe.inventory.repository;
 
-import io.eddie.unitybe.inventory.entity.InventoryItem;
+import io.eddie.unitybe.inventory.domain.InventoryItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

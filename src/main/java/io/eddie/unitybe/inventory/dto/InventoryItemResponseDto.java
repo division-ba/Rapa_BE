@@ -1,10 +1,10 @@
 package io.eddie.unitybe.inventory.dto;
 
-import io.eddie.unitybe.inventory.entity.InventoryItem;
+import io.eddie.unitybe.inventory.domain.InventoryItem;
 
 import java.time.LocalDateTime;
 
-public record InventoryItemResponse(
+public record InventoryItemResponseDto(
         Long userItemId,
         Long itemId,
         String rId,
@@ -18,8 +18,8 @@ public record InventoryItemResponse(
         Boolean equipped,
         LocalDateTime acquiredAt
 ) {
-    public static InventoryItemResponse from(InventoryItem inventoryItem) {
-        return new InventoryItemResponse(
+    public static InventoryItemResponseDto from(InventoryItem inventoryItem) {
+        return new InventoryItemResponseDto(
                 inventoryItem.getId(),
                 inventoryItem.getItem().getId(),
                 inventoryItem.getItem().getRid(),

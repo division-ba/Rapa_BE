@@ -5,7 +5,7 @@ import io.eddie.unitybe.common.config.SecurityConfig;
 import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
 import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
 import io.eddie.unitybe.common.exception.ErrorCode;
-import io.eddie.unitybe.inventory.dto.InventoryItemResponse;
+import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.domain.Role;
 import io.eddie.unitybe.user.dto.AuthUser;
@@ -52,8 +52,8 @@ class InventoryControllerTest {
     private static final String ACCESS_TOKEN = "access-token";
     private final AuthUser userDetails = new AuthUser(1L, "gamer@test.com", "password", "USER");
 
-    private InventoryItemResponse inventoryItemResponse() {
-        return new InventoryItemResponse(
+    private InventoryItemResponseDto inventoryItemResponse() {
+        return new InventoryItemResponseDto(
                 10L,
                 2L,
                 "potion_hp_001",

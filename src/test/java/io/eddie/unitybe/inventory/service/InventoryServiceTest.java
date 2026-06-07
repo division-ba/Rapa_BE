@@ -1,7 +1,7 @@
 package io.eddie.unitybe.inventory.service;
 
-import io.eddie.unitybe.inventory.dto.InventoryItemResponse;
-import io.eddie.unitybe.inventory.entity.InventoryItem;
+import io.eddie.unitybe.inventory.domain.InventoryItem;
+import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.repository.InventoryItemRepository;
 import io.eddie.unitybe.item.entity.Item;
 import io.eddie.unitybe.item.entity.ItemGrade;
@@ -79,7 +79,7 @@ class InventoryServiceTest {
             given(inventoryItemRepository.findAllByUserIdAndDeletedAtIsNull(1L))
                     .willReturn(List.of(inventoryItem(3)));
 
-            List<InventoryItemResponse> responses = inventoryService.getInventory("gamer@test.com");
+            List<InventoryItemResponseDto> responses = inventoryService.getInventory("gamer@test.com");
 
             assertThat(responses.size()).isEqualTo(1);
             assertThat(responses.getFirst().userItemId()).isEqualTo(10L);

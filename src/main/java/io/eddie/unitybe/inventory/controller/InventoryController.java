@@ -3,7 +3,7 @@ package io.eddie.unitybe.inventory.controller;
 import io.eddie.unitybe.common.dto.ApiResponse;
 import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
-import io.eddie.unitybe.inventory.dto.InventoryItemResponse;
+import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.dto.AuthUser;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<InventoryItemResponse>>> getInventory(
+    public ResponseEntity<ApiResponse<List<InventoryItemResponseDto>>> getInventory(
             @AuthenticationPrincipal AuthUser userDetails
     ) {
         return ResponseEntity.ok(ApiResponse.success(inventoryService.getInventory(getEmail(userDetails))));
