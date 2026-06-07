@@ -61,7 +61,6 @@ class PlayerControllerTest {
     AuthUser authUser;
     User user;
     Player player;
-    UserDataResponseDto dataResponseDto;
 
     @BeforeEach
     void setUp() {
@@ -77,7 +76,10 @@ class PlayerControllerTest {
 
     @Nested
     @DisplayName("GET /data 엔드포인트는")
-    class getMyProfile {
+    class getMyData {
+
+        UserDataResponseDto dataResponseDto;
+
         @BeforeEach
         void setUp() {
             dataResponseDto = new UserDataResponseDto(
@@ -114,6 +116,50 @@ class PlayerControllerTest {
                         .andExpect(jsonPath("$.data.account.userId").value(userId))
                         .andExpect(jsonPath("$.data.account.email").value(email))
                         .andExpect(jsonPath("$.data.account.nickname").value(nickname))
+                        .andDo(print());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /profile 엔드포인트는")
+    class getMyProfile {
+        UserProfileResponseDto responseDto;
+        Integer level = 1;
+        Long exp = 0L;
+        Long totalPlaySeconds = 0L;
+        @BeforeEach
+        void setUp() {
+            responseDto = new UserProfileResponseDto(
+                    player.getLevel(), player.getExp(), player.getTotalPlaySeconds());
+        }
+
+        @Nested
+        @DisplayName("유효한 토큰이 주어지면")
+        class Context_with_valid_request {
+
+            @Test
+            @DisplayName("200 상태와 내 계정 정보를 반환한다")
+            void it_return_200_ok_and_response_body() throws Exception {
+                //given
+                given(playerService.getUserProfile(any())).willReturn(responseDto);
+                //when-then
+                mockMvc.perform(
+                                get("/api/v1/users/me/profile")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.data.level").value(level))
+                        .andExpect(jsonPath("$.data.exp").value(exp))
+                        .andExpect(jsonPath("$.data.totalPlaySeconds").value(totalPlaySeconds))
                         .andDo(print());
             }
         }

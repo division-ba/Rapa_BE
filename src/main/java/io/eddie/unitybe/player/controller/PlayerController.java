@@ -2,6 +2,7 @@ package io.eddie.unitybe.player.controller;
 
 import io.eddie.unitybe.common.dto.ApiResponse;
 import io.eddie.unitybe.player.dto.UserDataResponseDto;
+import io.eddie.unitybe.player.dto.UserProfileResponseDto;
 import io.eddie.unitybe.player.service.PlayerService;
 import io.eddie.unitybe.user.dto.AuthUser;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,12 @@ public class PlayerController {
     @GetMapping("/data")
     public ResponseEntity<ApiResponse<UserDataResponseDto>> getUserData(@AuthenticationPrincipal AuthUser authUser) {
         UserDataResponseDto responseDto = playerService.getUserData(authUser);
+        return new ResponseEntity<>(ApiResponse.success(responseDto), HttpStatus.OK);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<UserProfileResponseDto>> getUserProfile(@AuthenticationPrincipal AuthUser authUser) {
+        UserProfileResponseDto responseDto = playerService.getUserProfile(authUser);
         return new ResponseEntity<>(ApiResponse.success(responseDto), HttpStatus.OK);
     }
 
