@@ -22,6 +22,8 @@ public enum ErrorCode {
 
     /*Inventory*/
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 id의 아이템이 존재하지 않습니다."),
+    // 획득 수량이 1 미만일 때. 서비스의 validateQuantity 에서 던진다. (HttpStatus 와 메시지를 한 곳에서 관리)
+    INVALID_ITEM_QUANTITY(HttpStatus.BAD_REQUEST, "아이템 수량은 1 이상이어야 합니다."),
 
     /*Common*/
     DIVISION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 에러입니다.");
