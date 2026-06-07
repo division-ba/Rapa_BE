@@ -15,6 +15,7 @@ public enum ErrorCode {
     USER_NOT_FOUND_BY_EMAIL(HttpStatus.NOT_FOUND, "해당하는 이메일의 유저를 찾을 수 없습니다."),
     LOGIN_NOT_MACH(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다."),
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
 
     /*Player*/
     NOT_FOUND_PLAYER(HttpStatus.UNAUTHORIZED, "해당하는 id의 플레이어를 찾을 수 없습니다."),
