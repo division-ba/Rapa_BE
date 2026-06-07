@@ -1,11 +1,14 @@
 package io.eddie.unitybe.player.domain;
 
 import io.eddie.unitybe.common.domain.BaseEntity;
+import io.eddie.unitybe.item.entity.Item;
 import io.eddie.unitybe.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Getter
 @Table(name = "players")
@@ -36,6 +39,9 @@ public class Player extends BaseEntity {
 
     @Column(nullable = false)
     private Long gem;
+
+    @OneToMany
+    private List<Item> inventory;  //todo: Inventory  추가시 InventoryItem으로 변경
 
     public Player(User user) {
         this.user = user;
