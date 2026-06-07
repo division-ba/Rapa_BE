@@ -26,7 +26,6 @@ public class InventoryController {
     public ResponseEntity<ApiResponse<List<InventoryItemResponseDto>>> getInventory(
             @AuthenticationPrincipal AuthUser authUser
     ) {
-        userService.checkUser(authUser.getId());
         return ResponseEntity.ok(ApiResponse.success(inventoryService.getInventory(authUser.getId())));
     }
 }
