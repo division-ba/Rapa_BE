@@ -5,6 +5,7 @@ import io.eddie.unitybe.common.config.SecurityConfig;
 import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
 import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
+import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.domain.Role;
 import io.eddie.unitybe.user.dto.AuthUser;
@@ -25,8 +26,11 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -100,5 +104,37 @@ class InventoryControllerTest {
                     .andExpect(jsonPath("$.data[0].quantity").value(5));
         }
 
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/users/me/inventory/pickup 엔드포인트는")
+    class Pickup {
+
+        @Test
+        @DisplayName("200 상태와 획득한 인벤토리 아이템 정보를 반환한다")
+        void it_returns_picked_up_item() throws Exception {
+            given(inventoryService.pickup(eq(1L), any(InventoryPickupRequestDto.class)))
+                    .willReturn(inventoryItemResponse());
+
+            mockMvc.perform(post("/api/v1/users/me/inventory/pickup")
+                            .with(user())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"itemId\":2,\"quantity\":5}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("아이템을 획득했습니다."))
+                    .andExpect(jsonPath("$.data.itemId").value(2L))
+                    .andExpect(jsonPath("$.data.quantity").value(5));
+        }
+
+        @Test
+        @DisplayName("수량이 1보다 작으면 400 상태를 반환한다")
+        void it_returns_400_when_quantity_is_less_than_one() throws Exception {
+            mockMvc.perform(post("/api/v1/users/me/inventory/pickup")
+                            .with(user())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"itemId\":2,\"quantity\":0}"))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }
