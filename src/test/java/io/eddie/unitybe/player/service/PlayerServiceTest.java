@@ -6,7 +6,6 @@ import io.eddie.unitybe.player.repository.PlayerRepository;
 import io.eddie.unitybe.player.repository.UserPlayerRepository;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.dto.AuthUser;
-import io.eddie.unitybe.user.dto.UserAccountResponseDto;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
