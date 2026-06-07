@@ -1,0 +1,212 @@
+package io.eddie.unitybe.friend.controller;
+
+import io.eddie.unitybe.common.config.JwtAuthenticationFilter;
+import io.eddie.unitybe.common.config.entrypoint.JwtAccessDeniedHandler;
+import io.eddie.unitybe.common.config.entrypoint.JwtAuthenticationEntryPoint;
+import io.eddie.unitybe.common.exception.DiversionException;
+import io.eddie.unitybe.common.exception.ErrorCode;
+import io.eddie.unitybe.friend.domain.FriendStatus;
+import io.eddie.unitybe.friend.dto.FriendRequestDto;
+import io.eddie.unitybe.friend.dto.FriendRequestResponseDto;
+import io.eddie.unitybe.friend.service.FriendService;
+import io.eddie.unitybe.user.dto.AuthUser;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
+
+import java.time.LocalDateTime;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(FriendController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@DisplayName("FriendController 클래스의")
+class FriendControllerTest {
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper om;
+
+    @MockitoBean
+    private FriendService friendService;
+
+    @MockitoBean
+    JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @MockitoBean
+    JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @MockitoBean
+    JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    String email = "newgamer@test.com";
+    String password = "mypassword123";
+
+    Long friendId = 1L;
+    Long fromUserId = 1L;
+    Long toUserId = 2L;
+    LocalDateTime createdAt = LocalDateTime.now();
+    String nickname2 = "새싹게이머1";
+    AuthUser authUser = new AuthUser(fromUserId, email, password, "USER");
+
+    @Nested
+    @DisplayName("GET /requests 엔드포인트는")
+    class RequestFriend {
+        FriendRequestDto request;
+        FriendRequestResponseDto response;
+        private FriendStatus status;
+
+        @BeforeEach
+        void setUp() {
+            status = FriendStatus.PENDING;
+            response = new FriendRequestResponseDto(
+                    friendId, fromUserId, toUserId, status, createdAt,nickname2
+            );
+        }
+        @Nested
+        @DisplayName("유효한 토큰과 입력값이 주어지면")
+        class Context_with_valid_request {
+            @BeforeEach
+            void setUp() {
+                request = new FriendRequestDto(toUserId);
+            }
+            @Test
+            @DisplayName("200 상태와 친구 요청 정보를 반환한다")
+            void it_return_200_ok_and_response_body() throws Exception {
+                //given
+                given(friendService.requestFriend(any(), eq(request))).willReturn(response);
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(request))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.data.friendRequestId").value(friendId))
+                        .andExpect(jsonPath("$.data.fromUserId").value(fromUserId))
+                        .andExpect(jsonPath("$.data.toUserId").value(toUserId))
+                        .andExpect(jsonPath("$.data.status").value(status.name()))
+                        .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
+                        .andExpect(jsonPath("$.data.nickname").value(nickname2))
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("request안의 id가 없으면")
+        class Context_with_invalid_toUserId {
+            @BeforeEach
+            void setUp() {
+                request = new FriendRequestDto(null);
+            }
+            @Test
+            @DisplayName("400오류와 id값이 필수라는 오류 메시지를 돌려준다")
+            void it_throws_400_and_return_id_is_needed() throws Exception {
+                //given
+                given(friendService.requestFriend(any(), eq(request))).willReturn(response);
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(request))
+                        )
+                        .andExpect(status().isBadRequest())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value("요청 상대의 아이디는 필수갑입니다"))
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("유효하지 않은 요청일때")
+        class Context_with_invalid_request {
+            @BeforeEach
+            void setUp() {
+                request = new FriendRequestDto(toUserId);
+            }
+            @Test
+            @DisplayName("(자기자신에게 요청) 400오류와 자기자신 요청 오류 메시지를 돌려준다")
+            void it_throws_400_and_return_self_request() throws Exception {
+                //given
+                given(friendService.requestFriend(any(), eq(request))).willThrow(new DiversionException(ErrorCode.SELF_FRIEND_REQUEST));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(request))
+                        )
+                        .andExpect(status().isBadRequest())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.SELF_FRIEND_REQUEST.getMessage()))
+                        .andDo(print());
+            }
+            @Test
+            @DisplayName("(이미 있는 요청) 400오류와 이미 요청이 있다는 오류 메시지를 돌려준다")
+            void it_throws_400_and_return_exist_request() throws Exception {
+                //given
+                given(friendService.requestFriend(any(), eq(request))).willThrow(new DiversionException(ErrorCode.EXIST_FRIEND_REQUEST));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(request))
+                        )
+                        .andExpect(status().isConflict())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.EXIST_FRIEND_REQUEST.getMessage()))
+                        .andDo(print());
+            }
+        }
+    }
+
+}

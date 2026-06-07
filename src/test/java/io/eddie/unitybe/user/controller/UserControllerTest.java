@@ -168,7 +168,6 @@ class UserControllerTest {
                 requestDto = new SignUpRequestDto(email, password, nickname);
                 given(userService.signup(requestDto)).willReturn(responseDto);
 
-                //whenthen
                 //when-then
                 mockMvc.perform(
                                 post("/api/v1/users/register")
