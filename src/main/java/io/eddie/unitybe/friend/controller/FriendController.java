@@ -25,6 +25,6 @@ public class FriendController {
     public ResponseEntity<ApiResponse<FriendRequestResponseDto>> requestFriend(@AuthenticationPrincipal AuthUser authUser,
                                                                                @RequestBody @Valid FriendRequestDto request) {
         FriendRequestResponseDto response = friendService.requestFriend(authUser, request);
-        return new ResponseEntity<>(ApiResponse.success(response), HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success("친구 요청을 보냈습니다.",response), HttpStatus.OK);
     }
 }
