@@ -15,6 +15,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -101,8 +102,17 @@ public class FriendService {
         friend.setStatus(FriendStatus.CANCELLED);
     }
 
+    public List<FriendRequestResponseDto> getRequestList(AuthUser authUser) {
+        List<Friend> requestList = friendRepository.findAllByToUserIdAndStatus(authUser.getId(), FriendStatus.PENDING);
+        return requestList.stream()
+                .map(req -> FriendRequestResponseDto.from(req, req.getFromUser().getNickname()))
+                .toList();
+    }
+
     private @NonNull Friend findFriend(Long requestId) {
         return friendRepository.findById(requestId)
                 .orElseThrow(() -> new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
     }
+
+
 }

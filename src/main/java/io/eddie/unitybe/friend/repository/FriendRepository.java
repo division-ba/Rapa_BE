@@ -1,8 +1,11 @@
 package io.eddie.unitybe.friend.repository;
 
 import io.eddie.unitybe.friend.domain.Friend;
+import io.eddie.unitybe.friend.domain.FriendStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
 
 public interface FriendRepository extends JpaRepository<Friend, Long> {
     @Query("""
@@ -12,5 +15,15 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
              or (f.fromUser.id = :user2Id and f.toUser.id = :user1Id)
         """)
     boolean existsFriendBetween(Long user1Id, Long user2Id);
+
+    @Query("""
+        select f
+        from Friend f
+        join fetch f.fromUser
+        join fetch f.toUser
+        where f.toUser.id = :toUserId
+            and f.status = :status
+        """)
+    List<Friend> findAllByToUserIdAndStatus(Long toUserId,  FriendStatus status);
 
 }

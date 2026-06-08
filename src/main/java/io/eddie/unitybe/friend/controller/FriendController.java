@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/users/me/friends")
 @RequiredArgsConstructor
@@ -49,6 +51,14 @@ public class FriendController {
         friendService.canceledRequest(authUser, requestId);
         return new ResponseEntity<>(ApiResponse.success("친구 요청을 취소했습니다."),HttpStatus.OK);
     }
+
+    // 받은 친구 요청 목록
+    @GetMapping("/requests")
+    public ResponseEntity<ApiResponse<List<FriendRequestResponseDto>>> getRequestList(@AuthenticationPrincipal AuthUser authUser) {
+        List<FriendRequestResponseDto> response = friendService.getRequestList(authUser);
+        return new ResponseEntity<>(ApiResponse.success(response),HttpStatus.OK);
+    }
+
 
 
 
