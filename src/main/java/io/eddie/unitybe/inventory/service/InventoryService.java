@@ -164,7 +164,27 @@ public class InventoryService {
 
     // 상대 인벤토리에 선물 아이템을 더한다(신규 생성/기존 누적/soft delete 복구) + GIFT_RECEIVED 이력.
     private void receiveGift(Long targetUserId, Item item, int quantity, User sender, LocalDateTime now) {
-        InventoryItem receiverItem = inventoryItemRepository.findByUserIdAndItemId(targetUserId, item.getId())
+        InventoryItem receiverItem = findOrCreateInventoryItem(targetUserId, item, now);
+        int before = receiverItem.getQuantity();
+        int after = before + quantity;
+        receiverItem.setQuantity(after);
+        inventoryItemHistoryRepository.save(InventoryItemHistory.giftReceived(receiverItem, quantity, before, after, sender));
+    }
+
+    // 027: 구매한 아이템을 인벤토리에 더한다(누적/복구/신규) + PURCHASE 이력. PurchaseService에서 호출.
+    @Transactional
+    public InventoryItem addPurchasedItem(Long userId, Item item, int quantity) {
+        InventoryItem inventoryItem = findOrCreateInventoryItem(userId, item, LocalDateTime.now());
+        int before = inventoryItem.getQuantity();
+        int after = before + quantity;
+        inventoryItem.setQuantity(after);
+        inventoryItemHistoryRepository.save(InventoryItemHistory.purchased(inventoryItem, quantity, before, after));
+        return inventoryItem;
+    }
+
+    // 보유 행 조회(누적), soft delete면 복구, 없으면 신규 생성. 선물수령·구매 공용.
+    private InventoryItem findOrCreateInventoryItem(Long userId, Item item, LocalDateTime now) {
+        return inventoryItemRepository.findByUserIdAndItemId(userId, item.getId())
                 .map(existing -> {
                     if (existing.getDeletedAt() != null) {
                         existing.setDeletedAt(null);
@@ -174,12 +194,7 @@ public class InventoryService {
                     return existing;
                 })
                 .orElseGet(() -> inventoryItemRepository.save(
-                        InventoryItem.create(userRepository.getReferenceById(targetUserId), item, 0, now)));
-
-        int before = receiverItem.getQuantity();
-        int after = before + quantity;
-        receiverItem.setQuantity(after);
-        inventoryItemHistoryRepository.save(InventoryItemHistory.giftReceived(receiverItem, quantity, before, after, sender));
+                        InventoryItem.create(userRepository.getReferenceById(userId), item, 0, now)));
     }
 
     private void validateQuantity(Integer quantity) {
