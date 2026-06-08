@@ -651,7 +651,7 @@ class FriendControllerTest {
         }
     }
     @Nested
-    @DisplayName("GET 엔드포인트는")
+    @DisplayName("GET \"\" 엔드포인트는")
     class GetFriendList {
         @Nested
         @DisplayName("유효한 토큰이 주어지면")
@@ -703,6 +703,69 @@ class FriendControllerTest {
                         .andExpect(jsonPath("$.data[1].createdAt").isNotEmpty())
                         .andExpect(jsonPath("$.data[1].nickname").value(nickname3))
                         .andDo(print());
+            }
+        }
+    }
+    @Nested
+    @DisplayName("GET /{friendUserId} 엔드포인트는")
+    class DeleteFriend {
+        @Nested
+        @DisplayName("로그인이 된 상태에서 유효한 입력이 주어지면")
+        class Context_with_valid_request {
+            Long friendUserId = 2L;
+            @Test
+            @DisplayName("200 상태와 삭제 메시지를 반환한다")
+            void it_return_200_ok_and_delete_message() throws Exception {
+                //given
+                doNothing().when(friendService)
+                        .deleteFriend(any(), eq(friendUserId));
+                //when-then
+                mockMvc.perform(
+                                delete("/api/v1/users/me/friends/2")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value("친구를 삭제했습니다."))
+                        .andDo(print());
+
+            }
+        }
+        @Nested
+        @DisplayName("로그인이 된 상태에서 친구유저 아이디가 유효하지 않다면")
+        class Context_with_invalid_friendUserId {
+            Long friendUserId = 5L;
+            @Test
+            @DisplayName("404오류와 요청을 친구관계가 아니다라는 오류 메시지를 돌려준다")
+            void it_throws_404_and_return_not_friend_relation() throws Exception {
+                //given
+                doThrow(new DiversionException(ErrorCode.NOT_FRIEND_RELATION))
+                        .when(friendService)
+                        .deleteFriend(any(), eq(friendUserId));
+                //when-then
+                mockMvc.perform(
+                                delete("/api/v1/users/me/friends/"+friendUserId)
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser,
+                                                        null,
+                                                        authUser.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isNotFound())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.NOT_FRIEND_RELATION.getMessage()))
+                        .andDo(print());
+
             }
         }
     }
