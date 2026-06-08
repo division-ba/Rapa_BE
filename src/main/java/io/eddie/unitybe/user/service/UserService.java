@@ -45,8 +45,8 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
-        return new AuthUser(user.getId(), user.getEmail(), user.getPassword(), user.getRole().name());
+        UserAuthInfo user = userRepository.findAuthInfoByEmail(email).orElseThrow(() -> new DiversionException(ErrorCode.USER_NOT_FOUND_BY_EMAIL));
+        return new AuthUser(user.id(), user.email(), user.password(), user.role().name());
     }
 
 
