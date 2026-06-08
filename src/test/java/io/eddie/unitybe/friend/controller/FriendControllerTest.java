@@ -213,7 +213,7 @@ class FriendControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /{requestId}/accept 엔드포인트는")
+    @DisplayName("POST /requests/{requestId}/accept 엔드포인트는")
     class AcceptRequest {
         Long requestId = 1L;
         FriendStatus status;
@@ -235,7 +235,7 @@ class FriendControllerTest {
                 given(friendService.acceptRequest(any(), eq(requestId))).willReturn(response);
                 //when-then
                 mockMvc.perform(
-                                post("/api/v1/users/me/friends/1/accept")
+                                post("/api/v1/users/me/friends/requests/1/accept")
                                         .with(csrf())
                                         .with(authentication(
                                                 new UsernamePasswordAuthenticationToken(
@@ -268,7 +268,7 @@ class FriendControllerTest {
                         .willThrow(new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
                 //when-then
                 mockMvc.perform(
-                                post("/api/v1/users/me/friends/1/accept")
+                                post("/api/v1/users/me/friends/requests/1/accept")
                                         .with(csrf())
                                         .with(authentication(
                                                 new UsernamePasswordAuthenticationToken(
@@ -296,7 +296,7 @@ class FriendControllerTest {
                         .willThrow(new DiversionException(ErrorCode.NOT_STATUS_PENDING));
                 //when-then
                 mockMvc.perform(
-                                post("/api/v1/users/me/friends/1/accept")
+                                post("/api/v1/users/me/friends/requests/1/accept")
                                         .with(csrf())
                                         .with(authentication(
                                                 new UsernamePasswordAuthenticationToken(
@@ -324,7 +324,7 @@ class FriendControllerTest {
                         .willThrow(new DiversionException(ErrorCode.NOT_REQUEST_RECIPIENT));
                 //when-then
                 mockMvc.perform(
-                                post("/api/v1/users/me/friends/1/accept")
+                                post("/api/v1/users/me/friends/requests/1/accept")
                                         .with(csrf())
                                         .with(authentication(
                                                 new UsernamePasswordAuthenticationToken(

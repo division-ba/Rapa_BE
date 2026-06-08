@@ -25,7 +25,7 @@ public class FriendController {
         return new ResponseEntity<>(ApiResponse.success("친구 요청을 보냈습니다.",response), HttpStatus.OK);
     }
 
-    @PostMapping("/{requestId}/accept")
+    @PostMapping("/requests/{requestId}/accept")
     public ResponseEntity<ApiResponse<FriendRequestResponseDto>> acceptRequest(@AuthenticationPrincipal AuthUser authUser,
                                                                                @PathVariable Long requestId) {
         FriendRequestResponseDto response = friendService.acceptRequest(authUser, requestId);
