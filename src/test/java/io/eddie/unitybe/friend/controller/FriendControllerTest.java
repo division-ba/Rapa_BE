@@ -650,4 +650,60 @@ class FriendControllerTest {
             }
         }
     }
+    @Nested
+    @DisplayName("GET 엔드포인트는")
+    class GetFriendList {
+        @Nested
+        @DisplayName("유효한 토큰이 주어지면")
+        class Context_with_valid_request {
+            List<FriendRequestResponseDto> response;
+            FriendStatus status =  FriendStatus.ACCEPTED;
+            Long friendId2 = 2L;
+            Long fromUserId2 = 3L;
+            String nickname3 = "새싹게이머2";
+            @BeforeEach
+            void setup() {
+                response = List.of(
+                        new FriendRequestResponseDto(
+                                friendId, fromUserId, toUserId, status, createdAt,nickname1),
+                        new FriendRequestResponseDto(
+                                friendId2, fromUserId2, toUserId, status, createdAt,nickname3)
+                );
+            }
+            @Test
+            @DisplayName("200 상태와 해당 데이터리스트를 반환한다")
+            void it_return_200_ok_and_response_data_list() throws Exception {
+                //given
+                given(friendService.getFriendList(any())).willReturn(response);
+                //when-then
+                mockMvc.perform(
+                                get("/api/v1/users/me/friends")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser2,
+                                                        null,
+                                                        authUser2.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.data[0].friendRequestId").value(friendId))
+                        .andExpect(jsonPath("$.data[0].fromUserId").value(fromUserId))
+                        .andExpect(jsonPath("$.data[0].toUserId").value(toUserId))
+                        .andExpect(jsonPath("$.data[0].status").value(status.name()))
+                        .andExpect(jsonPath("$.data[0].createdAt").isNotEmpty())
+                        .andExpect(jsonPath("$.data[0].nickname").value(nickname1))
+
+                        .andExpect(jsonPath("$.data[1].friendRequestId").value(friendId2))
+                        .andExpect(jsonPath("$.data[1].fromUserId").value(fromUserId2))
+                        .andExpect(jsonPath("$.data[1].toUserId").value(toUserId))
+                        .andExpect(jsonPath("$.data[1].status").value(status.name()))
+                        .andExpect(jsonPath("$.data[1].createdAt").isNotEmpty())
+                        .andExpect(jsonPath("$.data[1].nickname").value(nickname3))
+                        .andDo(print());
+            }
+        }
+    }
 }
