@@ -482,5 +482,41 @@ class FriendServiceTest {
             }
         }
     }
+    @Nested
+    @DisplayName("deleteFriend 메서드는")
+    public class DeleteFriend {
+        Long friendUserId = 2L;
+        @Nested
+        @DisplayName("로그인이 된 상태에서 유효한 입력이 주어지면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("변경된 요청상태를 저장한다")
+            void it_save_request_information() {
+                //given
+                given(friendRepository.findMyFriend(authUser.getId(), friendUserId, FriendStatus.ACCEPTED)).willReturn(Optional.of(friend));
+                //when
+                friendService.deleteFriend(authUser, friendUserId);
+                //then
+                assertThat(friend.getStatus()).isEqualTo(FriendStatus.DELETED);
+                assertThat(friend.getDeletedAt()).isNotNull();
+            }
+        }
+        @Nested
+        @DisplayName("로그인이 된 상태에서 유효하지 않은 입력이 주어지면")
+        class Context_with_invalid_request {
+            @Test
+            @DisplayName("친구관계가 아니라는 메시지를 반환한다")
+            void it_return_not_friend_relation() {
+                //given
+                given(friendRepository.findMyFriend(authUser.getId(), friendUserId, FriendStatus.ACCEPTED)).willReturn(Optional.empty());
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> friendService.deleteFriend(authUser, friendUserId)
+                );
+                //then
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.NOT_FRIEND_RELATION.getMessage());
+            }
+        }
+    }
 
 }
