@@ -102,12 +102,28 @@ public class FriendService {
         friend.setStatus(FriendStatus.CANCELLED);
     }
 
+    //받은 친구 요청 목록 조회
     public List<FriendRequestResponseDto> getRequestList(AuthUser authUser) {
         List<Friend> requestList = friendRepository.findAllByToUserIdAndStatus(authUser.getId(), FriendStatus.PENDING);
         return requestList.stream()
                 .map(req -> FriendRequestResponseDto.from(req, req.getFromUser().getNickname()))
                 .toList();
     }
+
+    // 친구 목록 조회
+    public List<FriendRequestResponseDto> getFriendList(AuthUser authUser) {
+        List<Friend> requestList = friendRepository.findFriendList(authUser.getId(), FriendStatus.ACCEPTED);
+        return requestList.stream()
+                .map(req ->
+                {
+                    if (req.getFromUser().getId().equals(authUser.getId()))
+                        return FriendRequestResponseDto.from(req, req.getToUser().getNickname());
+                     else
+                        return FriendRequestResponseDto.from(req, req.getFromUser().getNickname());
+                })
+                .toList();
+    }
+
 
     private @NonNull Friend findFriend(Long requestId) {
         return friendRepository.findById(requestId)

@@ -59,6 +59,13 @@ public class FriendController {
         return new ResponseEntity<>(ApiResponse.success(response),HttpStatus.OK);
     }
 
+    // 친구 목록
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<FriendRequestResponseDto>>> getFriendList(@AuthenticationPrincipal AuthUser authUser) {
+        List<FriendRequestResponseDto> response = friendService.getFriendList(authUser);
+        return new ResponseEntity<>(ApiResponse.success(response),HttpStatus.OK);
+    }
+
 
 
 
