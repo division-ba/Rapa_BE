@@ -1,7 +1,7 @@
 package io.eddie.unitybe.player.domain;
 
 import io.eddie.unitybe.common.domain.BaseEntity;
-import io.eddie.unitybe.item.entity.Item;
+import io.eddie.unitybe.inventory.domain.InventoryItem;
 import io.eddie.unitybe.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -17,8 +17,6 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Player extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
     private Long id;
 
     @MapsId
@@ -43,7 +41,7 @@ public class Player extends BaseEntity {
     private Long gem;
 
     @OneToMany
-    private List<Item> inventory;  //todo: Inventory  추가시 InventoryItem으로 변경
+    private List<InventoryItem> inventory;
 
     public Player(User user) {
         this.user = user;

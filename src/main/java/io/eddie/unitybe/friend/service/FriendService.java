@@ -139,5 +139,10 @@ public class FriendService {
                 .orElseThrow(() -> new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
     }
 
+    public int countFriends(Long userId) {
+        List<Friend> friendList = friendRepository.findFriendList(userId, FriendStatus.ACCEPTED);
+        return friendList.size();
+    }
+
 
 }
