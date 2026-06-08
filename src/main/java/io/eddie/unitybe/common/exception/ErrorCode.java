@@ -29,6 +29,7 @@ public enum ErrorCode {
     DECLINED_NOT_REQUEST_RECIPIENT(HttpStatus.BAD_REQUEST, "본인에게 온 요청만 거절할 수 있습니다."),
     CANCELED_NOT_REQUEST_SENDER(HttpStatus.BAD_REQUEST, "본인이 보낸 요청만 취소할 수 있습니다."),
     NOT_STATUS_PENDING(HttpStatus.CONFLICT, "요청이 대기상태가 아닙니다."),
+    NOT_FRIEND_RELATION(HttpStatus.NOT_FOUND, "친구 관계가 아닙니다."),
 
     /*Inventory*/
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 id의 아이템이 존재하지 않습니다."),

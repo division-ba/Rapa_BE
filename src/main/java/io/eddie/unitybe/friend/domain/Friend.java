@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(name = "friends")
@@ -35,6 +37,11 @@ public class Friend extends BaseEntity {
         this.fromUser = fromUser;
         this.toUser = toUser;
         this.status = FriendStatus.PENDING;
+    }
+
+    public void delete() {
+        this.status = FriendStatus.DELETED;
+        setDeletedAt(LocalDateTime.now());
     }
 
 

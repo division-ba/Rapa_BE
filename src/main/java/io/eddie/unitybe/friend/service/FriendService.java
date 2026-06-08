@@ -124,6 +124,15 @@ public class FriendService {
                 .toList();
     }
 
+    //친구 삭제
+    @Transactional
+    public void deleteFriend(AuthUser authUser, Long friendUserId) {
+        // 나와 상대가 친구관계이고 상태가 accepted인 경우 찾기
+        Friend friend = friendRepository.findMyFriend(authUser.getId(), friendUserId, FriendStatus.ACCEPTED)
+                .orElseThrow(()-> new DiversionException(ErrorCode.NOT_FRIEND_RELATION));
+        // 해당 친구 삭제
+        friend.delete();
+    }
 
     private @NonNull Friend findFriend(Long requestId) {
         return friendRepository.findById(requestId)
