@@ -427,5 +427,60 @@ class FriendServiceTest {
             }
         }
     }
+    @Nested
+    @DisplayName("getFriendList 메서드는")
+    public class GetFriendList {
+        AuthUser authUser3;
+        private Long fromUserId2 = 3L;
+        private User fromUser2;
+        String email3 = "gamer2@test.com";
+        String nickname3 = "새싹게이머2";
+        Friend friend2;
+
+        @BeforeEach
+        void setUp() {
+            authUser3 = new AuthUser(fromUserId2, email3, encodedPassword, "USER");
+            fromUser2 = new User(email3, encodedPassword, nickname3);
+            friend2 = new Friend(fromUser2, toUser);
+            ReflectionTestUtils.setField(fromUser2, "id", fromUserId2);
+            ReflectionTestUtils.setField(friend2, "id", 2L);
+            ReflectionTestUtils.setField(friend, "createdAt", LocalDateTime.now());
+            ReflectionTestUtils.setField(friend2, "createdAt", LocalDateTime.now());
+            friend.setStatus(FriendStatus.ACCEPTED);
+            friend2.setStatus(FriendStatus.ACCEPTED);
+
+        }
+
+
+        @Nested
+        @DisplayName("로그인이 된 상태로 유효한 요청이라면")
+        class Context_with_valid_request{
+            @Test
+            @DisplayName("요청된 데이터를 반환한다")
+            void it_return_request_information(){
+                //given
+                given(friendRepository.findFriendList(authUser2.getId(), FriendStatus.ACCEPTED))
+                        .willReturn(List.of(friend, friend2));
+                //when
+                List<FriendRequestResponseDto> responseList = friendService.getFriendList(authUser2);
+                System.out.println("responseList.size() = " + responseList.size());
+                //then
+                assertThat((responseList.size())).isEqualTo(2);
+                assertThat(responseList.getFirst().friendRequestId()).isEqualTo(friend.getId());
+                assertThat(responseList.getFirst().fromUserId()).isEqualTo(fromUserId);
+                assertThat(responseList.getFirst().toUserId()).isEqualTo(toUserId);
+                assertThat(responseList.getFirst().status()).isEqualTo(FriendStatus.ACCEPTED);
+                assertThat(responseList.getFirst().createdAt()).isNotNull();
+                assertThat(responseList.getFirst().nickname()).isEqualTo(nickname1);
+
+                assertThat(responseList.get(1).friendRequestId()).isEqualTo(friend2.getId());
+                assertThat(responseList.get(1).fromUserId()).isEqualTo(fromUserId2);
+                assertThat(responseList.get(1).toUserId()).isEqualTo(toUserId);
+                assertThat(responseList.get(1).status()).isEqualTo(FriendStatus.ACCEPTED);
+                assertThat(responseList.get(1).createdAt()).isNotNull();
+                assertThat(responseList.get(1).nickname()).isEqualTo(nickname3);
+            }
+        }
+    }
 
 }
