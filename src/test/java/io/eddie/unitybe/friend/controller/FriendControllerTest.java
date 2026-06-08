@@ -321,7 +321,7 @@ class FriendControllerTest {
             void it_throws_400_and_return_not_request_recipient() throws Exception {
                 //given
                 given(friendService.acceptRequest(any(), eq(requestId)))
-                        .willThrow(new DiversionException(ErrorCode.NOT_REQUEST_RECIPIENT));
+                        .willThrow(new DiversionException(ErrorCode.ACCEPTED_NOT_REQUEST_RECIPIENT));
                 //when-then
                 mockMvc.perform(
                                 post("/api/v1/users/me/friends/requests/1/accept")
@@ -336,7 +336,7 @@ class FriendControllerTest {
                         )
                         .andExpect(status().isBadRequest())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(jsonPath("$.message").value(ErrorCode.NOT_REQUEST_RECIPIENT.getMessage()))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.ACCEPTED_NOT_REQUEST_RECIPIENT.getMessage()))
                         .andDo(print());
             }
         }

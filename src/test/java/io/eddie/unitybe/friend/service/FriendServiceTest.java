@@ -222,7 +222,7 @@ class FriendServiceTest {
                 DiversionException exception = assertThrows(
                         DiversionException.class,() -> friendService.acceptRequest(authUser2, requestId)
                 );
-                assertThat(exception.getMessage()).isEqualTo(ErrorCode.NOT_REQUEST_RECIPIENT.getMessage());
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.ACCEPTED_NOT_REQUEST_RECIPIENT.getMessage());
             }
         }
 
