@@ -1,6 +1,7 @@
 package io.eddie.unitybe.inventory.domain;
 
 import io.eddie.unitybe.common.domain.HistoryEntity;
+import io.eddie.unitybe.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -47,6 +48,11 @@ public class InventoryItemHistory extends HistoryEntity {
     @Column(nullable = false)
     private int afterQuantity;
 
+    // 선물처럼 상대가 있는 변동에서 상대 유저를 기록(없으면 null). GIFT_SENT=받는이, GIFT_RECEIVED=보낸이.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "related_user_id")
+    private User relatedUser;
+
     public static InventoryItemHistory acquired(InventoryItem inventoryItem, int quantity, int beforeQuantity, int afterQuantity) {
         return InventoryItemHistory.builder()
                 .inventoryItem(inventoryItem)
@@ -74,6 +80,30 @@ public class InventoryItemHistory extends HistoryEntity {
                 .quantity(quantity)
                 .beforeQuantity(beforeQuantity)
                 .afterQuantity(afterQuantity)
+                .build();
+    }
+
+    // 선물 보냄 — relatedUser = 받는 유저
+    public static InventoryItemHistory giftSent(InventoryItem inventoryItem, int quantity, int beforeQuantity, int afterQuantity, User receiver) {
+        return InventoryItemHistory.builder()
+                .inventoryItem(inventoryItem)
+                .activity(InventoryActivity.GIFT_SENT)
+                .quantity(quantity)
+                .beforeQuantity(beforeQuantity)
+                .afterQuantity(afterQuantity)
+                .relatedUser(receiver)
+                .build();
+    }
+
+    // 선물 받음 — relatedUser = 보낸 유저
+    public static InventoryItemHistory giftReceived(InventoryItem inventoryItem, int quantity, int beforeQuantity, int afterQuantity, User sender) {
+        return InventoryItemHistory.builder()
+                .inventoryItem(inventoryItem)
+                .activity(InventoryActivity.GIFT_RECEIVED)
+                .quantity(quantity)
+                .beforeQuantity(beforeQuantity)
+                .afterQuantity(afterQuantity)
+                .relatedUser(sender)
                 .build();
     }
 }

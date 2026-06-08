@@ -1,6 +1,7 @@
 package io.eddie.unitybe.inventory.controller;
 
 import io.eddie.unitybe.common.dto.ApiResponse;
+import io.eddie.unitybe.inventory.dto.GiftRequestDto;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
 import io.eddie.unitybe.inventory.dto.SellRequestDto;
@@ -64,5 +65,16 @@ public class InventoryController {
     ) {
         inventoryService.sell(authUser.getId(), userItemId, request);
         return ResponseEntity.ok(ApiResponse.success("아이템을 판매했습니다."));
+    }
+
+    // 029: 선물 — userItemId(Path) + {targetPlayerId, quantity}(Body). 응답 body 없음.
+    @PostMapping("/{userItemId}/gift")
+    public ResponseEntity<ApiResponse<Void>> gift(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long userItemId,
+            @Valid @RequestBody GiftRequestDto request
+    ) {
+        inventoryService.gift(authUser.getId(), userItemId, request);
+        return ResponseEntity.ok(ApiResponse.success("선물을 보냈습니다."));
     }
 }
