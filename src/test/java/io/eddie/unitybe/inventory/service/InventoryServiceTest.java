@@ -4,6 +4,7 @@ import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.inventory.domain.InventoryItem;
 import io.eddie.unitybe.inventory.domain.InventoryItemHistory;
+import io.eddie.unitybe.inventory.dto.GiftRequestDto;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
 import io.eddie.unitybe.inventory.dto.SellRequestDto;
@@ -322,6 +323,115 @@ class InventoryServiceTest {
         @DisplayName("수량이 1보다 작으면 INVALID_ITEM_QUANTITY 예외를 던진다")
         void it_throws_when_quantity_is_less_than_one() {
             assertThatThrownBy(() -> inventoryService.sell(1L, 10L, new SellRequestDto(0)))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ITEM_QUANTITY);
+        }
+    }
+
+    @Nested
+    @DisplayName("gift 메서드는")
+    class Gift {
+
+        // 1번 유저가 2번 유저에게 item(2L) 2개 선물
+        private final GiftRequestDto request = new GiftRequestDto(2L, 2);
+
+        private User targetUser() {
+            return new User(2L, "friend@test.com", "encoded-password", "친구");
+        }
+
+        private InventoryItem receiverItem(int quantity) {
+            return InventoryItem.builder()
+                    .id(20L)
+                    .user(targetUser())
+                    .item(item())
+                    .quantity(quantity)
+                    .equipped(false)
+                    .acquiredAt(LocalDateTime.of(2026, 6, 4, 10, 0))
+                    .build();
+        }
+
+        @Test
+        @DisplayName("보내는 쪽 수량을 차감하고 받는 쪽 수량을 누적하며 양쪽 이력을 저장한다")
+        void it_transfers_item_and_logs_both_sides() {
+            InventoryItem senderItem = inventoryItem(5);
+            InventoryItem receiver = receiverItem(3);
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(senderItem));
+            given(userRepository.findById(2L)).willReturn(Optional.of(targetUser()));
+            given(inventoryItemRepository.findByUserIdAndItemId(2L, 2L)).willReturn(Optional.of(receiver));
+            given(userRepository.getReferenceById(1L)).willReturn(user());
+
+            inventoryService.gift(1L, 10L, request);
+
+            assertThat(senderItem.getQuantity()).isEqualTo(3);   // 5 - 2
+            assertThat(receiver.getQuantity()).isEqualTo(5);     // 3 + 2
+            verify(inventoryItemHistoryRepository, times(2)).save(any(InventoryItemHistory.class));  // SENT + RECEIVED
+        }
+
+        @Test
+        @DisplayName("받는 쪽이 처음 받는 아이템이면 새 인벤토리 행을 생성한다")
+        void it_creates_receiver_item_when_absent() {
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(inventoryItem(5)));
+            given(userRepository.findById(2L)).willReturn(Optional.of(targetUser()));
+            given(inventoryItemRepository.findByUserIdAndItemId(2L, 2L)).willReturn(Optional.empty());
+            given(userRepository.getReferenceById(1L)).willReturn(user());
+            given(userRepository.getReferenceById(2L)).willReturn(targetUser());
+            given(inventoryItemRepository.save(any(InventoryItem.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
+
+            inventoryService.gift(1L, 10L, request);
+
+            verify(inventoryItemRepository, times(1)).save(any(InventoryItem.class));        // 받는 쪽 신규 생성
+            verify(inventoryItemHistoryRepository, times(2)).save(any(InventoryItemHistory.class));
+        }
+
+        @Test
+        @DisplayName("자기 자신에게 선물하면 SELF_GIFT_NOT_ALLOWED 예외를 던진다")
+        void it_throws_when_self_gift() {
+            assertThatThrownBy(() -> inventoryService.gift(1L, 10L, new GiftRequestDto(1L, 2)))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.SELF_GIFT_NOT_ALLOWED);
+        }
+
+        @Test
+        @DisplayName("보유 수량보다 많이 선물하면 INSUFFICIENT_ITEM_QUANTITY 예외를 던진다")
+        void it_throws_when_quantity_exceeds_owned() {
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(inventoryItem(1)));
+
+            assertThatThrownBy(() -> inventoryService.gift(1L, 10L, request))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INSUFFICIENT_ITEM_QUANTITY);
+        }
+
+        @Test
+        @DisplayName("대상 유저가 없으면 TARGET_USER_NOT_FOUND 예외를 던진다")
+        void it_throws_when_target_not_found() {
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(inventoryItem(5)));
+            given(userRepository.findById(2L)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inventoryService.gift(1L, 10L, request))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TARGET_USER_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("보유하지 않은 항목이면 INVENTORY_ITEM_NOT_FOUND 예외를 던진다")
+        void it_throws_when_not_owned() {
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inventoryService.gift(1L, 10L, request))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVENTORY_ITEM_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("수량이 1보다 작으면 INVALID_ITEM_QUANTITY 예외를 던진다")
+        void it_throws_when_quantity_is_less_than_one() {
+            assertThatThrownBy(() -> inventoryService.gift(1L, 10L, new GiftRequestDto(2L, 0)))
                     .isInstanceOf(DiversionException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ITEM_QUANTITY);
         }
