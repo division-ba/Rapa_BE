@@ -225,9 +225,83 @@ class FriendServiceTest {
                 assertThat(exception.getMessage()).isEqualTo(ErrorCode.ACCEPTED_NOT_REQUEST_RECIPIENT.getMessage());
             }
         }
-
-
     }
-
+    @Nested
+    @DisplayName("declineRequest 메서드는")
+    public class DeclineRequest {
+        Long requestId = 1L;
+        @BeforeEach
+        void setUp() {
+            ReflectionTestUtils.setField(friend, "id", 1L);
+            ReflectionTestUtils.setField(friend, "createdAt", LocalDateTime.now());
+        }
+        @Nested
+        @DisplayName("로그인이 된 상태에서 유효한 입력이 주어지면")
+        class Context_with_valid_request{
+            @Test
+            @DisplayName("변경된 요청상태를 저장한다")
+            void it_return_request_information(){
+                //given
+                given(friendRepository.findById(requestId)).willReturn(Optional.of(friend));
+                //when
+                friendService.declineRequest(authUser2, requestId);
+                //then
+                assertThat(friend.getStatus()).isEqualTo(FriendStatus.DECLINED);
+            }
+        }
+        @Nested
+        @DisplayName("요청 아이디가 유효하지 않다면")
+        class Context_with_invalid_requestId{
+            @Test
+            @DisplayName("요청을 찾을 수 없다는 에러를 반환한다")
+            void it_throws_not_status_pending(){
+                //given
+                given(friendRepository.findById(requestId)).willReturn(Optional.empty());
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> friendService.declineRequest(authUser2, requestId)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.FRIEND_NOT_FOUND.getMessage());
+            }
+        }
+        @Nested
+        @DisplayName("요청상태가 대기상태가 아니라면")
+        class Context_with_not_pending_request{
+            @BeforeEach
+            void setUp() {
+                friend.setStatus(FriendStatus.ACCEPTED);
+            }
+            @Test
+            @DisplayName("대기상태가 아니라는 에러를 반환한다")
+            void it_throws_not_status_pending(){
+                //given
+                given(friendRepository.findById(requestId)).willReturn(Optional.of(friend));
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> friendService.declineRequest(authUser2, requestId)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.NOT_STATUS_PENDING.getMessage());
+            }
+        }
+        @Nested
+        @DisplayName("본인에게 온 요청이 아니라면")
+        class Context_with_not_request_recipient{
+            @BeforeEach
+            void setUp() {
+                authUser2 = new AuthUser(3L, email2, encodedPassword, "USER");
+            }
+            @Test
+            @DisplayName("수신자가 아니라는 에러를 반환한다")
+            void it_throws_not_status_pending(){
+                //given
+                given(friendRepository.findById(requestId)).willReturn(Optional.of(friend));
+                // when & then
+                DiversionException exception = assertThrows(
+                        DiversionException.class,() -> friendService.declineRequest(authUser2, requestId)
+                );
+                assertThat(exception.getMessage()).isEqualTo(ErrorCode.DECLINED_NOT_REQUEST_RECIPIENT.getMessage());
+            }
+        }
+    }
 
 }
