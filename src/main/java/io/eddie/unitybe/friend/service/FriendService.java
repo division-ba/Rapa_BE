@@ -48,7 +48,8 @@ public class FriendService {
     @Transactional
     public FriendRequestResponseDto acceptRequest(AuthUser authUser, Long requestId) {
         // 친구 요청 찾기
-        Friend friend = friendRepository.findById(requestId).orElseThrow(() -> new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
+        Friend friend = friendRepository.findById(requestId)
+                .orElseThrow(() -> new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
         // 요청 상태가 PENDING 상태가 아니라면 에러 반환
         if (!friend.getStatus().equals(FriendStatus.PENDING))
             throw new DiversionException(ErrorCode.NOT_STATUS_PENDING);
