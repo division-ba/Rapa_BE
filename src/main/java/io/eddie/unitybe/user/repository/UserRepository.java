@@ -5,6 +5,8 @@ import io.eddie.unitybe.user.dto.UserAuthInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -23,4 +25,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     where u.email = :email
 """)
     Optional<UserAuthInfo> findAuthInfoByEmail(String email);
+
+    // 대시보드: 일자별 가입자 그래프용. 전체 유저의 가입시각만.
+    @Query("select u.createdAt from User u")
+    List<LocalDateTime> findAllCreatedAt();
 }

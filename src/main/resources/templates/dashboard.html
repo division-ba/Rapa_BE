@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Unity Admin · 대시보드</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; background: #f4f6f8; color: #1f2937; }
+        header { background: #111827; color: #fff; padding: 18px 28px; font-size: 20px; font-weight: 700; }
+        main { padding: 28px; max-width: 1100px; margin: 0 auto; }
+        h2 { font-size: 16px; margin: 28px 0 12px; color: #374151; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .card .label { font-size: 13px; color: #6b7280; }
+        .card .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        th, td { padding: 11px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid #f0f1f3; }
+        th { background: #f9fafb; color: #6b7280; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #e0e7ff; color: #3730a3; }
+        .empty { color: #9ca3af; padding: 18px; text-align: center; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .chart-box { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .chart-box .title { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 10px; }
+        @media (max-width: 720px) { .charts { grid-template-columns: 1fr; } }
+    </style>
+    <!-- Chart.js: 브라우저에서 도는 JS 그래프 라이브러리 (CDN 한 줄) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<header>🎮 Unity Admin · 대시보드</header>
+<main>
+    <!-- 상단 카드 -->
+    <div class="cards">
+        <div class="card"><div class="label">전체 유저</div><div class="value" th:text="${summary.totalUsers}">0</div></div>
+        <div class="card"><div class="label">총 획득 건수</div><div class="value" th:text="${summary.acquiredCount}">0</div></div>
+        <div class="card"><div class="label">총 구매 건수</div><div class="value" th:text="${summary.purchaseCount}">0</div></div>
+        <div class="card"><div class="label">총 판매 건수</div><div class="value" th:text="${summary.saleCount}">0</div></div>
+        <div class="card"><div class="label">총 구매액 (골드)</div><div class="value" th:text="${summary.totalGoldSpent}">0</div></div>
+    </div>
+
+    <!-- 그래프 (A: 활동별 막대 / B: 일자별 가입자 선) -->
+    <h2>그래프</h2>
+    <div class="charts">
+        <div class="chart-box">
+            <div class="title">활동별 건수</div>
+            <canvas id="activityChart" height="220"></canvas>
+        </div>
+        <div class="chart-box">
+            <div class="title">일자별 가입자 수 (최근 7일)</div>
+            <canvas id="signupChart" height="220"></canvas>
+        </div>
+    </div>
+
+    <!-- 활동별 건수 -->
+    <h2>활동별 건수</h2>
+    <table>
+        <thead><tr><th>활동</th><th class="num">건수</th></tr></thead>
+        <tbody>
+        <tr th:each="ac : ${summary.activityCounts}">
+            <td><span class="tag" th:text="${ac.activity}">ACQUIRED</span></td>
+            <td class="num" th:text="${ac.count}">0</td>
+        </tr>
+        <tr th:if="${summary.activityCounts.isEmpty()}"><td colspan="2" class="empty">아직 활동 로그가 없습니다.</td></tr>
+        </tbody>
+    </table>
+
+    <!-- 인기 아이템 Top 10 -->
+    <h2>인기 아이템 Top 10 (획득 + 구매 수량)</h2>
+    <table>
+        <thead><tr><th>#</th><th>아이템</th><th class="num">총 수량</th></tr></thead>
+        <tbody>
+        <tr th:each="pi, st : ${summary.popularItems}">
+            <td th:text="${st.count}">1</td>
+            <td th:text="${pi.itemName}">아이템</td>
+            <td class="num" th:text="${pi.totalQuantity}">0</td>
+        </tr>
+        <tr th:if="${summary.popularItems.isEmpty()}"><td colspan="3" class="empty">아직 데이터가 없습니다.</td></tr>
+        </tbody>
+    </table>
+
+    <!-- 최근 활동 피드 -->
+    <h2>최근 활동 (최신 20건)</h2>
+    <table>
+        <thead><tr><th>시각</th><th>활동</th><th>아이템</th><th class="num">수량</th><th class="num">변동</th></tr></thead>
+        <tbody>
+        <tr th:each="r : ${summary.recentActivities}">
+            <td th:text="${#temporals.format(r.createdAt, 'MM-dd HH:mm')}">--</td>
+            <td><span class="tag" th:text="${r.activity}">ACQUIRED</span></td>
+            <td th:text="${r.itemName}">아이템</td>
+            <td class="num" th:text="${r.quantity}">0</td>
+            <td class="num" th:text="${r.beforeQuantity} + ' → ' + ${r.afterQuantity}">0 → 0</td>
+        </tr>
+        <tr th:if="${summary.recentActivities.isEmpty()}"><td colspan="5" class="empty">아직 활동 로그가 없습니다.</td></tr>
+        </tbody>
+    </table>
+</main>
+
+<!-- 서버 데이터(model)를 th:inline 으로 JS 배열에 주입해서 Chart.js에 먹인다 -->
+<script th:inline="javascript">
+    // A. 활동별 건수 (기존 activityCounts 재사용)
+    const activityRows = /*[[${summary.activityCounts}]]*/ [];
+    new Chart(document.getElementById('activityChart'), {
+        type: 'bar',
+        data: {
+            labels: activityRows.map(r => r.activity),
+            datasets: [{ label: '건수', data: activityRows.map(r => r.count), backgroundColor: '#6366f1' }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+
+    // B. 일자별 가입자 수 (최근 7일)
+    const signupRows = /*[[${summary.dailySignups}]]*/ [];
+    new Chart(document.getElementById('signupChart'), {
+        type: 'line',
+        data: {
+            labels: signupRows.map(r => r.date),
+            datasets: [{ label: '가입자', data: signupRows.map(r => r.count), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.15)', fill: true, tension: 0.3 }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+</script>
+</body>
+</html>
