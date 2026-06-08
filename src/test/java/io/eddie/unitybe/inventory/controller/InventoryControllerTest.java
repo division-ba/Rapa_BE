@@ -183,4 +183,32 @@ class InventoryControllerTest {
                     .andExpect(status().isBadRequest());
         }
     }
+
+    @Nested
+    @DisplayName("POST /api/v1/users/me/inventory/{userItemId}/gift 엔드포인트는")
+    class Gift {
+
+        @Test
+        @DisplayName("200 상태와 선물 메시지를 반환한다")
+        void it_gifts_item() throws Exception {
+            mockMvc.perform(post("/api/v1/users/me/inventory/10/gift")
+                            .with(user())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"targetPlayerId\":2,\"quantity\":1}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("선물을 보냈습니다."))
+                    .andExpect(jsonPath("$.data").isEmpty());
+        }
+
+        @Test
+        @DisplayName("수량이 1보다 작으면 400 상태를 반환한다")
+        void it_returns_400_when_quantity_is_less_than_one() throws Exception {
+            mockMvc.perform(post("/api/v1/users/me/inventory/10/gift")
+                            .with(user())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"targetPlayerId\":2,\"quantity\":0}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
 }
