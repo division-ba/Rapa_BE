@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -47,13 +48,25 @@ public class InventoryItem extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
+    @Setter
     @Column(nullable = false)
     private int quantity;
 
     @Column(nullable = false)
     private boolean equipped;
 
+    @Setter
     @Column(nullable = false)
     private LocalDateTime acquiredAt;
+
+    public static InventoryItem create(User user, Item item, int quantity, LocalDateTime acquiredAt) {
+        return InventoryItem.builder()
+                .user(user)
+                .item(item)
+                .quantity(quantity)
+                .equipped(false)
+                .acquiredAt(acquiredAt)
+                .build();
+    }
 
 }

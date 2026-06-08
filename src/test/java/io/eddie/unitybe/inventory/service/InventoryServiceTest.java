@@ -1,12 +1,19 @@
 package io.eddie.unitybe.inventory.service;
 
+import io.eddie.unitybe.common.exception.DiversionException;
+import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.inventory.domain.InventoryItem;
+import io.eddie.unitybe.inventory.domain.InventoryItemHistory;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
+import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
+import io.eddie.unitybe.inventory.repository.InventoryItemHistoryRepository;
 import io.eddie.unitybe.inventory.repository.InventoryItemRepository;
 import io.eddie.unitybe.item.entity.Item;
 import io.eddie.unitybe.item.entity.ItemGrade;
 import io.eddie.unitybe.item.entity.ItemType;
+import io.eddie.unitybe.item.repository.ItemRepository;
 import io.eddie.unitybe.user.domain.User;
+import io.eddie.unitybe.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,9 +24,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InventoryService 클래스의")
@@ -28,11 +41,25 @@ class InventoryServiceTest {
     @Mock
     private InventoryItemRepository inventoryItemRepository;
 
+    @Mock
+    private InventoryItemHistoryRepository inventoryItemHistoryRepository;
+
+    @Mock
+    private ItemRepository itemRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
     private InventoryService inventoryService;
 
     @BeforeEach
     void setUp() {
-        inventoryService = new InventoryService(inventoryItemRepository);
+        inventoryService = new InventoryService(
+                inventoryItemRepository,
+                inventoryItemHistoryRepository,
+                itemRepository,
+                userRepository
+        );
     }
 
     private User user() {
@@ -80,6 +107,79 @@ class InventoryServiceTest {
             assertThat(responses.getFirst().itemId()).isEqualTo(2L);
             assertThat(responses.getFirst().rId()).isEqualTo("potion_hp_001");
             assertThat(responses.getFirst().quantity()).isEqualTo(3);
+        }
+    }
+
+    @Nested
+    @DisplayName("pickup 메서드는")
+    class Pickup {
+
+        private final InventoryPickupRequestDto request = new InventoryPickupRequestDto(2L, 5);
+
+        @Test
+        @DisplayName("처음 획득하는 아이템이면 새 인벤토리 아이템을 생성하고 획득 이력을 저장한다")
+        void it_creates_new_inventory_item() {
+            given(itemRepository.findByIdAndDeletedAtIsNull(2L)).willReturn(Optional.of(item()));
+            given(inventoryItemRepository.findByUserIdAndItemId(1L, 2L)).willReturn(Optional.empty());
+            given(userRepository.getReferenceById(1L)).willReturn(user());
+            given(inventoryItemRepository.save(any(InventoryItem.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
+
+            InventoryItemResponseDto response = inventoryService.pickup(1L, request);
+
+            assertThat(response.itemId()).isEqualTo(2L);
+            assertThat(response.quantity()).isEqualTo(5);
+            verify(inventoryItemRepository, times(1)).save(any(InventoryItem.class));
+            verify(inventoryItemHistoryRepository, times(1)).save(any(InventoryItemHistory.class));
+        }
+
+        @Test
+        @DisplayName("이미 보유한 아이템이면 수량을 누적하고 획득 이력을 저장한다")
+        void it_accumulates_quantity_for_existing_item() {
+            given(itemRepository.findByIdAndDeletedAtIsNull(2L)).willReturn(Optional.of(item()));
+            given(inventoryItemRepository.findByUserIdAndItemId(1L, 2L))
+                    .willReturn(Optional.of(inventoryItem(3)));
+
+            InventoryItemResponseDto response = inventoryService.pickup(1L, request);
+
+            assertThat(response.quantity()).isEqualTo(8);
+            verify(inventoryItemRepository, never()).save(any(InventoryItem.class));
+            verify(inventoryItemHistoryRepository, times(1)).save(any(InventoryItemHistory.class));
+        }
+
+        @Test
+        @DisplayName("soft delete 된 아이템을 재획득하면 복구 후 수량을 재설정한다")
+        void it_restores_soft_deleted_item() {
+            InventoryItem deleted = inventoryItem(3);
+            deleted.setDeletedAt(LocalDateTime.of(2026, 6, 5, 10, 0));
+            given(itemRepository.findByIdAndDeletedAtIsNull(2L)).willReturn(Optional.of(item()));
+            given(inventoryItemRepository.findByUserIdAndItemId(1L, 2L)).willReturn(Optional.of(deleted));
+
+            InventoryItemResponseDto response = inventoryService.pickup(1L, request);
+
+            assertThat(response.quantity()).isEqualTo(5);
+            assertThat(deleted.getDeletedAt()).isNull();
+            verify(inventoryItemHistoryRepository, times(1)).save(any(InventoryItemHistory.class));
+        }
+
+        @Test
+        @DisplayName("수량이 1보다 작으면 INVALID_ITEM_QUANTITY 예외를 던진다")
+        void it_throws_when_quantity_is_less_than_one() {
+            InventoryPickupRequestDto invalid = new InventoryPickupRequestDto(2L, 0);
+
+            assertThatThrownBy(() -> inventoryService.pickup(1L, invalid))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ITEM_QUANTITY);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 아이템이면 ITEM_NOT_FOUND 예외를 던진다")
+        void it_throws_when_item_not_found() {
+            given(itemRepository.findByIdAndDeletedAtIsNull(2L)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inventoryService.pickup(1L, request))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ITEM_NOT_FOUND);
         }
     }
 }
