@@ -106,4 +106,15 @@ public class InventoryItemHistory extends HistoryEntity {
                 .relatedUser(sender)
                 .build();
     }
+
+    // 상점 구매로 인벤토리에 추가
+    public static InventoryItemHistory purchased(InventoryItem inventoryItem, int quantity, int beforeQuantity, int afterQuantity) {
+        return InventoryItemHistory.builder()
+                .inventoryItem(inventoryItem)
+                .activity(InventoryActivity.PURCHASE)
+                .quantity(quantity)
+                .beforeQuantity(beforeQuantity)
+                .afterQuantity(afterQuantity)
+                .build();
+    }
 }

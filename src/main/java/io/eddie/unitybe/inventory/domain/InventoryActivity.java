@@ -5,5 +5,6 @@ public enum InventoryActivity {
     DISCARD,         // 버리기
     SALE,            // 판매
     GIFT_SENT,       // 선물 보냄
-    GIFT_RECEIVED    // 선물 받음
+    GIFT_RECEIVED,   // 선물 받음
+    PURCHASE         // 상점 구매
 }

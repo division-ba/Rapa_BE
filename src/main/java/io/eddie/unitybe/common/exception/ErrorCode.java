@@ -42,6 +42,11 @@ public enum ErrorCode {
     /*NPC*/
     NPC_NOT_FOUND(HttpStatus.NOT_FOUND, "NPC를 찾을 수 없습니다."),
 
+    /*Shop / Purchase*/
+    SHOP_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "상점 아이템을 찾을 수 없습니다."),
+    SHOP_ITEM_OUT_OF_STOCK(HttpStatus.CONFLICT, "상점 아이템의 재고가 부족합니다."),
+    INSUFFICIENT_GOLD(HttpStatus.BAD_REQUEST, "골드가 부족합니다."),
+
     /*Common*/
     DIVISION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 에러입니다.");
     private final HttpStatus status;
