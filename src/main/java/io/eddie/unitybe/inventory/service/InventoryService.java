@@ -4,6 +4,7 @@ import io.eddie.unitybe.common.exception.DiversionException;
 import io.eddie.unitybe.common.exception.ErrorCode;
 import io.eddie.unitybe.inventory.domain.InventoryItem;
 import io.eddie.unitybe.inventory.domain.InventoryItemHistory;
+import io.eddie.unitybe.inventory.dto.GiftRequestDto;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
 import io.eddie.unitybe.inventory.dto.SellRequestDto;
@@ -126,6 +127,59 @@ public class InventoryService {
         if (after == 0) {
             inventoryItem.setDeletedAt(LocalDateTime.now());
         }
+    }
+
+    // 029: 아이템 선물 — 내 수량 차감(GIFT_SENT) + 상대 인벤 누적(GIFT_RECEIVED). targetPlayerId = 상대 user/player id.
+    @Transactional
+    public void gift(Long userId, Long userItemId, GiftRequestDto request) {
+        validateQuantity(request.quantity());
+
+        if (userId.equals(request.targetPlayerId())) {
+            throw new DiversionException(ErrorCode.SELF_GIFT_NOT_ALLOWED);
+        }
+
+        InventoryItem senderItem = inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(userItemId, userId)
+                .orElseThrow(() -> new DiversionException(ErrorCode.INVENTORY_ITEM_NOT_FOUND));
+        if (senderItem.getQuantity() < request.quantity()) {
+            throw new DiversionException(ErrorCode.INSUFFICIENT_ITEM_QUANTITY);
+        }
+
+        User target = userRepository.findById(request.targetPlayerId())
+                .orElseThrow(() -> new DiversionException(ErrorCode.TARGET_USER_NOT_FOUND));
+        LocalDateTime now = LocalDateTime.now();
+
+        // 보내는 쪽: 차감 + GIFT_SENT(상대=받는이)
+        int before = senderItem.getQuantity();
+        int after = before - request.quantity();
+        senderItem.setQuantity(after);
+        inventoryItemHistoryRepository.save(InventoryItemHistory.giftSent(senderItem, request.quantity(), before, after, target));
+        if (after == 0) {
+            senderItem.setDeletedAt(now);
+        }
+
+        // 받는 쪽: 누적/복구/신규 + GIFT_RECEIVED(상대=보낸이)
+        User me = userRepository.getReferenceById(userId);
+        receiveGift(request.targetPlayerId(), senderItem.getItem(), request.quantity(), me, now);
+    }
+
+    // 상대 인벤토리에 선물 아이템을 더한다(신규 생성/기존 누적/soft delete 복구) + GIFT_RECEIVED 이력.
+    private void receiveGift(Long targetUserId, Item item, int quantity, User sender, LocalDateTime now) {
+        InventoryItem receiverItem = inventoryItemRepository.findByUserIdAndItemId(targetUserId, item.getId())
+                .map(existing -> {
+                    if (existing.getDeletedAt() != null) {
+                        existing.setDeletedAt(null);
+                        existing.setQuantity(0);
+                        existing.setAcquiredAt(now);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> inventoryItemRepository.save(
+                        InventoryItem.create(userRepository.getReferenceById(targetUserId), item, 0, now)));
+
+        int before = receiverItem.getQuantity();
+        int after = before + quantity;
+        receiverItem.setQuantity(after);
+        inventoryItemHistoryRepository.save(InventoryItemHistory.giftReceived(receiverItem, quantity, before, after, sender));
     }
 
     private void validateQuantity(Integer quantity) {
