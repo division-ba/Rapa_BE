@@ -28,6 +28,8 @@ import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -337,6 +339,134 @@ class FriendControllerTest {
                         .andExpect(status().isBadRequest())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                         .andExpect(jsonPath("$.message").value(ErrorCode.ACCEPTED_NOT_REQUEST_RECIPIENT.getMessage()))
+                        .andDo(print());
+            }
+        }
+    }
+    @Nested
+    @DisplayName("POST /requests/{requestId}/decline 엔드포인트는")
+    class DeclineRequest {
+        Long requestId = 1L;
+        FriendStatus status;
+        FriendRequestResponseDto response;
+        @BeforeEach
+        void setUp() {
+            status = FriendStatus.DECLINED;
+            response = new FriendRequestResponseDto(
+                    friendId, fromUserId, toUserId, status, createdAt,nickname1
+            );
+        }
+        @Nested
+        @DisplayName("유효한 토큰과 입력값이 주어지면")
+        class Context_with_valid_request {
+            @Test
+            @DisplayName("200 상태와 변경된 친구 요청 정보를 반환한다")
+            void it_return_200_ok_and_response_body() throws Exception {
+                //given
+                doNothing().when(friendService)
+                        .declineRequest(any(), eq(requestId));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests/1/decline")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser2,
+                                                        null,
+                                                        authUser2.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value("친구 요청을 거절했습니다."))
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("요청 아이디가 유효하지 않다면")
+        class Context_with_invalid_requestId {
+            @Test
+            @DisplayName("404오류와 요청을 찾을 수 없다는 오류 메시지를 돌려준다")
+            void it_throws_404_and_return_friend_not_found() throws Exception {
+                //given
+                doThrow(new DiversionException(ErrorCode.FRIEND_NOT_FOUND))
+                        .when(friendService)
+                        .declineRequest(any(), eq(requestId));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests/1/decline")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser2,
+                                                        null,
+                                                        authUser2.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isNotFound())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.FRIEND_NOT_FOUND.getMessage()))
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("요청상태가 대기상태가 아니라면")
+        class Context_with_not_pending_request {
+            @Test
+            @DisplayName("409오류와 대기상태가 아니라는 오류 메시지를 돌려준다")
+            void it_throws_409_and_return_status_not_pending() throws Exception {
+                //given
+                doThrow(new DiversionException(ErrorCode.NOT_STATUS_PENDING))
+                        .when(friendService)
+                        .declineRequest(any(), eq(requestId));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests/1/decline")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser2,
+                                                        null,
+                                                        authUser2.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isConflict())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.NOT_STATUS_PENDING.getMessage()))
+                        .andDo(print());
+            }
+        }
+
+        @Nested
+        @DisplayName("본인에게 온 요청이 아니라면")
+        class Context_with_not_request_recipient {
+            @Test
+            @DisplayName("400오류와 수신자가 아니라는 오류 메시지를 돌려준다")
+            void it_throws_400_and_return_not_request_recipient() throws Exception {
+                //given
+                doThrow(new DiversionException(ErrorCode.DECLINED_NOT_REQUEST_RECIPIENT))
+                        .when(friendService)
+                        .declineRequest(any(), eq(requestId));
+                //when-then
+                mockMvc.perform(
+                                post("/api/v1/users/me/friends/requests/1/decline")
+                                        .with(csrf())
+                                        .with(authentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                        authUser2,
+                                                        null,
+                                                        authUser2.getAuthorities()
+                                                )
+                                        ))
+                        )
+                        .andExpect(status().isBadRequest())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.message").value(ErrorCode.DECLINED_NOT_REQUEST_RECIPIENT.getMessage()))
                         .andDo(print());
             }
         }
