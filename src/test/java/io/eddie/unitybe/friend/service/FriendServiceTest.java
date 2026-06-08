@@ -175,12 +175,8 @@ class FriendServiceTest {
         @Nested
         @DisplayName("요청 아이디가 유효하지 않다면")
         class Context_with_invalid_requestId{
-            @BeforeEach
-            void setUp() {
-                friend.setStatus(FriendStatus.ACCEPTED);
-            }
             @Test
-            @DisplayName("요청을 찾을 수 에러를 반환한다")
+            @DisplayName("요청을 찾을 수 없다는 에러를 반환한다")
             void it_throws_not_status_pending(){
                 //given
                 given(friendRepository.findById(requestId)).willReturn(Optional.empty());
