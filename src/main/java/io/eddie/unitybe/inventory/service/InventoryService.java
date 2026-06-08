@@ -6,10 +6,13 @@ import io.eddie.unitybe.inventory.domain.InventoryItem;
 import io.eddie.unitybe.inventory.domain.InventoryItemHistory;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
+import io.eddie.unitybe.inventory.dto.SellRequestDto;
 import io.eddie.unitybe.inventory.repository.InventoryItemHistoryRepository;
 import io.eddie.unitybe.inventory.repository.InventoryItemRepository;
 import io.eddie.unitybe.item.entity.Item;
 import io.eddie.unitybe.item.repository.ItemRepository;
+import io.eddie.unitybe.player.domain.Player;
+import io.eddie.unitybe.player.repository.PlayerRepository;
 import io.eddie.unitybe.user.domain.User;
 import io.eddie.unitybe.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class InventoryService {
     private final InventoryItemHistoryRepository inventoryItemHistoryRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final PlayerRepository playerRepository;
 
     public List<InventoryItemResponseDto> getInventory(Long userId) {
         return inventoryItemRepository.findAllByUserIdAndDeletedAtIsNull(userId).stream()
@@ -90,6 +94,35 @@ public class InventoryService {
         inventoryItemHistoryRepository.save(InventoryItemHistory.discarded(inventoryItem, quantity, before, after));
 
         // 다 버려서 0이 되면 soft delete (조회에서 제외)
+        if (after == 0) {
+            inventoryItem.setDeletedAt(LocalDateTime.now());
+        }
+    }
+
+    // 028: 아이템 판매 — sellPrice×수량 만큼 골드 증가 + 수량 차감(0이면 soft delete). SALE 이력.
+    @Transactional
+    public void sell(Long userId, Long userItemId, SellRequestDto request) {
+        validateQuantity(request.quantity());
+
+        InventoryItem inventoryItem = inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(userItemId, userId)
+                .orElseThrow(() -> new DiversionException(ErrorCode.INVENTORY_ITEM_NOT_FOUND));
+
+        if (inventoryItem.getQuantity() < request.quantity()) {
+            throw new DiversionException(ErrorCode.INSUFFICIENT_ITEM_QUANTITY);
+        }
+
+        // 판매가 × 수량 만큼 골드 증가 (Player.id == user.id)
+        Player player = playerRepository.findById(userId)
+                .orElseThrow(() -> new DiversionException(ErrorCode.PLAYER_NOT_FOUND));
+        long gain = (long) inventoryItem.getItem().getSellPrice() * request.quantity();
+        player.setGold(player.getGold() + gain);
+
+        int before = inventoryItem.getQuantity();
+        int after = before - request.quantity();
+        inventoryItem.setQuantity(after);
+        inventoryItemHistoryRepository.save(InventoryItemHistory.sold(inventoryItem, request.quantity(), before, after));
+
+        // 다 팔아서 0이 되면 soft delete (조회에서 제외)
         if (after == 0) {
             inventoryItem.setDeletedAt(LocalDateTime.now());
         }

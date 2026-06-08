@@ -155,4 +155,32 @@ class InventoryControllerTest {
                     .andExpect(jsonPath("$.data").isEmpty());
         }
     }
+
+    @Nested
+    @DisplayName("POST /api/v1/users/me/inventory/{userItemId}/sell 엔드포인트는")
+    class Sell {
+
+        @Test
+        @DisplayName("200 상태와 판매 메시지를 반환한다")
+        void it_sells_item() throws Exception {
+            mockMvc.perform(post("/api/v1/users/me/inventory/10/sell")
+                            .with(user())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"quantity\":2}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("아이템을 판매했습니다."))
+                    .andExpect(jsonPath("$.data").isEmpty());
+        }
+
+        @Test
+        @DisplayName("수량이 1보다 작으면 400 상태를 반환한다")
+        void it_returns_400_when_quantity_is_less_than_one() throws Exception {
+            mockMvc.perform(post("/api/v1/users/me/inventory/10/sell")
+                            .with(user())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"quantity\":0}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
 }

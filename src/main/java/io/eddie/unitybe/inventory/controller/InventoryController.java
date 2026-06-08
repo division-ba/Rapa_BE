@@ -3,6 +3,7 @@ package io.eddie.unitybe.inventory.controller;
 import io.eddie.unitybe.common.dto.ApiResponse;
 import io.eddie.unitybe.inventory.dto.InventoryItemResponseDto;
 import io.eddie.unitybe.inventory.dto.InventoryPickupRequestDto;
+import io.eddie.unitybe.inventory.dto.SellRequestDto;
 import io.eddie.unitybe.inventory.service.InventoryService;
 import io.eddie.unitybe.user.dto.AuthUser;
 import jakarta.validation.Valid;
@@ -52,5 +53,16 @@ public class InventoryController {
     ) {
         inventoryService.discard(authUser.getId(), userItemId, quantity);
         return ResponseEntity.ok(ApiResponse.success("아이템을 버렸습니다."));
+    }
+
+    // 028: 판매 — userItemId(Path) + quantity(Body). 응답 body 없음.
+    @PostMapping("/{userItemId}/sell")
+    public ResponseEntity<ApiResponse<Void>> sell(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long userItemId,
+            @Valid @RequestBody SellRequestDto request
+    ) {
+        inventoryService.sell(authUser.getId(), userItemId, request);
+        return ResponseEntity.ok(ApiResponse.success("아이템을 판매했습니다."));
     }
 }
