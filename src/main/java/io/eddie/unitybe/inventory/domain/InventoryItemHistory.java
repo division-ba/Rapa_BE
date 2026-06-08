@@ -56,4 +56,14 @@ public class InventoryItemHistory extends HistoryEntity {
                 .afterQuantity(afterQuantity)
                 .build();
     }
+
+    public static InventoryItemHistory discarded(InventoryItem inventoryItem, int quantity, int beforeQuantity, int afterQuantity) {
+        return InventoryItemHistory.builder()
+                .inventoryItem(inventoryItem)
+                .activity(InventoryActivity.DISCARD)
+                .quantity(quantity)
+                .beforeQuantity(beforeQuantity)
+                .afterQuantity(afterQuantity)
+                .build();
+    }
 }

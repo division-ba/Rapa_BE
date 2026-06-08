@@ -72,6 +72,29 @@ public class InventoryService {
         return inventoryItem;
     }
 
+    // 022: 아이템 버리기 — 수량 차감, 0이면 soft delete. DISCARD 이력. (userItemId = InventoryItem.id)
+    @Transactional
+    public void discard(Long userId, Long userItemId, int quantity) {
+        validateQuantity(quantity);
+
+        InventoryItem inventoryItem = inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(userItemId, userId)
+                .orElseThrow(() -> new DiversionException(ErrorCode.INVENTORY_ITEM_NOT_FOUND));
+
+        if (inventoryItem.getQuantity() < quantity) {
+            throw new DiversionException(ErrorCode.INSUFFICIENT_ITEM_QUANTITY);
+        }
+
+        int before = inventoryItem.getQuantity();
+        int after = before - quantity;
+        inventoryItem.setQuantity(after);
+        inventoryItemHistoryRepository.save(InventoryItemHistory.discarded(inventoryItem, quantity, before, after));
+
+        // 다 버려서 0이 되면 soft delete (조회에서 제외)
+        if (after == 0) {
+            inventoryItem.setDeletedAt(LocalDateTime.now());
+        }
+    }
+
     private void validateQuantity(Integer quantity) {
         if (quantity == null || quantity < 1) {
             throw new DiversionException(ErrorCode.INVALID_ITEM_QUANTITY);
