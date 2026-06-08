@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class Player extends BaseEntity {
     @Column(nullable = false)
     private Long totalPlaySeconds;
 
+    @Setter
     @Column(nullable = false)
     private Long gold;
 
