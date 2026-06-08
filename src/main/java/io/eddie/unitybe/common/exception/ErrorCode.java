@@ -24,6 +24,9 @@ public enum ErrorCode {
     SELF_FRIEND_REQUEST(HttpStatus.BAD_REQUEST, "자기 자신에게 친구 요청을 보낼 수 없습니다."),
     EXIST_FRIEND_REQUEST(HttpStatus.CONFLICT, "이미 보낸 친구 요청이 있습니다."),
     EXIST_FRIEND(HttpStatus.CONFLICT, "이미 친구 관계입니다. "),
+    FRIEND_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 id의 친구요청을 찾을 수 없습니다."),
+    NOT_REQUEST_RECIPIENT(HttpStatus.BAD_REQUEST, "본인에게 온 요청만 수락할 수 있습니다."),
+    NOT_STATUS_PENDING(HttpStatus.CONFLICT, "요청이 대기상태가 아닙니다."),
     /*Inventory*/
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 id의 아이템이 존재하지 않습니다."),
 
