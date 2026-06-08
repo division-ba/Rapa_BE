@@ -50,17 +50,38 @@ public class FriendService {
         // 친구 요청 찾기
         Friend friend = friendRepository.findById(requestId)
                 .orElseThrow(() -> new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
+
+        //본인에게 온 요청이 아니라면 에러 반환
+        if (!friend.getToUser().getId().equals(authUser.getId()))
+            throw new DiversionException(ErrorCode.ACCEPTED_NOT_REQUEST_RECIPIENT);
+
         // 요청 상태가 PENDING 상태가 아니라면 에러 반환
         if (!friend.getStatus().equals(FriendStatus.PENDING))
             throw new DiversionException(ErrorCode.NOT_STATUS_PENDING);
 
-        //본인에게 온 요청이 아니라면 에러 반환
-        if (!friend.getToUser().getId().equals(authUser.getId()))
-            throw new DiversionException(ErrorCode.NOT_REQUEST_RECIPIENT);
 
         // 상태 accepted로 변경
         friend.setStatus(FriendStatus.ACCEPTED);
         return FriendRequestResponseDto.from(friend, friend.getFromUser().getNickname());
 
+    }
+
+    // 친구 요청 거절
+    @Transactional
+    public void declineRequest(AuthUser authUser, Long requestId) {
+        // 친구 요청 찾기
+        Friend friend = friendRepository.findById(requestId)
+                .orElseThrow(() -> new DiversionException(ErrorCode.FRIEND_NOT_FOUND));
+
+        //본인에게 온 요청이 아니라면 에러 반환
+        if (!friend.getToUser().getId().equals(authUser.getId()))
+            throw new DiversionException(ErrorCode.DECLINED_NOT_REQUEST_RECIPIENT);
+
+        // 요청 상태가 PENDING 상태가 아니라면 에러 반환
+        if (!friend.getStatus().equals(FriendStatus.PENDING))
+            throw new DiversionException(ErrorCode.NOT_STATUS_PENDING);
+
+        // 상태 accepted로 변경
+        friend.setStatus(FriendStatus.DECLINED);
     }
 }

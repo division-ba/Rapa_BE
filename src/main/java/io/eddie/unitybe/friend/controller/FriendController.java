@@ -31,4 +31,13 @@ public class FriendController {
         FriendRequestResponseDto response = friendService.acceptRequest(authUser, requestId);
         return new ResponseEntity<>(ApiResponse.success("친구 요청을 수락했습니다.",response), HttpStatus.OK);
     }
+    @PostMapping("/requests/{requestId}/decline")
+    public ResponseEntity<ApiResponse<Void>> declineRequest(@AuthenticationPrincipal AuthUser authUser,
+                                                                               @PathVariable Long requestId) {
+        friendService.declineRequest(authUser, requestId);
+        return new ResponseEntity<>(ApiResponse.success("친구 요청을 거절했습니다."),HttpStatus.OK);
+    }
+
+
+
 }
