@@ -182,4 +182,66 @@ class InventoryServiceTest {
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ITEM_NOT_FOUND);
         }
     }
+
+    @Nested
+    @DisplayName("discard 메서드는")
+    class Discard {
+
+        @Test
+        @DisplayName("수량을 차감하고 버리기 이력을 저장한다")
+        void it_decreases_quantity_and_logs() {
+            InventoryItem owned = inventoryItem(5);
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(owned));
+
+            inventoryService.discard(1L, 10L, 2);
+
+            assertThat(owned.getQuantity()).isEqualTo(3);
+            assertThat(owned.getDeletedAt()).isNull();
+            verify(inventoryItemHistoryRepository, times(1)).save(any(InventoryItemHistory.class));
+        }
+
+        @Test
+        @DisplayName("전부 버려서 수량이 0이 되면 soft delete 한다")
+        void it_soft_deletes_when_quantity_reaches_zero() {
+            InventoryItem owned = inventoryItem(2);
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(owned));
+
+            inventoryService.discard(1L, 10L, 2);
+
+            assertThat(owned.getQuantity()).isEqualTo(0);
+            assertThat(owned.getDeletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("보유 수량보다 많이 버리면 INSUFFICIENT_ITEM_QUANTITY 예외를 던진다")
+        void it_throws_when_quantity_exceeds_owned() {
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.of(inventoryItem(1)));
+
+            assertThatThrownBy(() -> inventoryService.discard(1L, 10L, 2))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INSUFFICIENT_ITEM_QUANTITY);
+        }
+
+        @Test
+        @DisplayName("보유하지 않은 항목이면 INVENTORY_ITEM_NOT_FOUND 예외를 던진다")
+        void it_throws_when_not_owned() {
+            given(inventoryItemRepository.findByIdAndUserIdAndDeletedAtIsNull(10L, 1L))
+                    .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inventoryService.discard(1L, 10L, 1))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVENTORY_ITEM_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("수량이 1보다 작으면 INVALID_ITEM_QUANTITY 예외를 던진다")
+        void it_throws_when_quantity_is_less_than_one() {
+            assertThatThrownBy(() -> inventoryService.discard(1L, 10L, 0))
+                    .isInstanceOf(DiversionException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ITEM_QUANTITY);
+        }
+    }
 }

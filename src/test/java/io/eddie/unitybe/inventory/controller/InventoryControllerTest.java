@@ -29,6 +29,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -135,6 +136,23 @@ class InventoryControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"itemId\":2,\"quantity\":0}"))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/v1/users/me/inventory/{userItemId}/discard 엔드포인트는")
+    class Discard {
+
+        @Test
+        @DisplayName("200 상태와 버리기 메시지를 반환한다")
+        void it_discards_item() throws Exception {
+            mockMvc.perform(delete("/api/v1/users/me/inventory/10/discard")
+                            .with(user())
+                            .param("quantity", "2"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("아이템을 버렸습니다."))
+                    .andExpect(jsonPath("$.data").isEmpty());
         }
     }
 }
