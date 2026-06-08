@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class FriendController {
     private final FriendService friendService;
 
+    // 친구 요청 생성
     @PostMapping("/requests")
     public ResponseEntity<ApiResponse<FriendRequestResponseDto>> requestFriend(@AuthenticationPrincipal AuthUser authUser,
                                                                                @RequestBody @Valid FriendRequestDto request) {
@@ -25,17 +26,28 @@ public class FriendController {
         return new ResponseEntity<>(ApiResponse.success("친구 요청을 보냈습니다.",response), HttpStatus.OK);
     }
 
+    //친구 요청 수락
     @PostMapping("/requests/{requestId}/accept")
     public ResponseEntity<ApiResponse<FriendRequestResponseDto>> acceptRequest(@AuthenticationPrincipal AuthUser authUser,
                                                                                @PathVariable Long requestId) {
         FriendRequestResponseDto response = friendService.acceptRequest(authUser, requestId);
         return new ResponseEntity<>(ApiResponse.success("친구 요청을 수락했습니다.",response), HttpStatus.OK);
     }
+
+    //친구 요청 거절
     @PostMapping("/requests/{requestId}/decline")
     public ResponseEntity<ApiResponse<Void>> declineRequest(@AuthenticationPrincipal AuthUser authUser,
                                                                                @PathVariable Long requestId) {
         friendService.declineRequest(authUser, requestId);
         return new ResponseEntity<>(ApiResponse.success("친구 요청을 거절했습니다."),HttpStatus.OK);
+    }
+
+    //친구 요청 취소
+    @DeleteMapping("/requests/{requestId}")
+    public ResponseEntity<ApiResponse<Void>> canceledRequest(@AuthenticationPrincipal AuthUser authUser,
+                                                            @PathVariable Long requestId) {
+        friendService.canceledRequest(authUser, requestId);
+        return new ResponseEntity<>(ApiResponse.success("친구 요청을 취소했습니다."),HttpStatus.OK);
     }
 
 
